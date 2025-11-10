@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/header"
 import { Plus, Edit2, Trash2, Eye, EyeOff } from "lucide-react"
 
 interface UserManagementPageProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

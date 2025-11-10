@@ -10,7 +10,7 @@ import { AlertCircle, Save, RotateCcw } from "lucide-react"
 
 interface TuneParametersPageProps {
   role: "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

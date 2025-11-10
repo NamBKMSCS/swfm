@@ -11,7 +11,7 @@ import { AlertsBanner } from "@/components/dashboard/alerts-banner"
 
 interface GuestDashboardProps {
   role: "guest" | "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin") => void
+  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin" | "tune" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

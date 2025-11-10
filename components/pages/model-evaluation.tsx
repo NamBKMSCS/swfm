@@ -9,7 +9,7 @@ import { ErrorDistribution } from "@/components/evaluation/error-distribution"
 
 interface ModelEvaluationPageProps {
   role: "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin") => void
+  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin" | "tune" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

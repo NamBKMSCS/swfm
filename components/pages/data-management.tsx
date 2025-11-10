@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/header"
 import { Plus, Edit2, Trash2, AlertCircle, Settings } from "lucide-react"
 
 interface DataManagementPageProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

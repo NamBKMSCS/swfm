@@ -12,7 +12,7 @@ import { AlertsBanner } from "@/components/dashboard/alerts-banner"
 
 interface ExpertDashboardProps {
   role: "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

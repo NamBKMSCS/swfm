@@ -10,7 +10,7 @@ import { SystemHealthPanel } from "@/components/admin/system-health"
 import { Users, Database } from "lucide-react"
 
 interface AdminDashboardProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

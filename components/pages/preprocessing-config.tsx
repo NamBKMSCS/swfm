@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/header"
 import { Settings, AlertCircle, CheckCircle2, ChevronDown } from "lucide-react"
 
 interface PreprocessingConfigPageProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
   onLogout: () => void
 }
 

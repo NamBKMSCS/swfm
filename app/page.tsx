@@ -10,10 +10,11 @@ import { AdminDashboard } from "@/components/pages/admin-dashboard"
 import { UserManagementPage } from "@/components/pages/user-management"
 import { DataManagementPage } from "@/components/pages/data-management"
 import { PreprocessingConfigPage } from "@/components/pages/preprocessing-config"
+import { MapDashboard } from "@/components/pages/map-dashboard"
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState<
-    "login" | "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing"
+    "login" | "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map"
   >("login")
   const [userRole, setUserRole] = useState<"guest" | "expert" | "admin">("guest")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -30,7 +31,7 @@ export default function Home() {
   }
 
   const handleNavigate = (
-    page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing",
+    page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map",
   ) => {
     setCurrentPage(page)
   }
@@ -43,6 +44,9 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {currentPage === "guest" && (
         <GuestDashboard role={userRole} onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentPage === "map" && (
+        <MapDashboard role={userRole} onNavigate={handleNavigate} onLogout={handleLogout} />
       )}
       {currentPage === "expert" && userRole !== "guest" && (
         <ExpertDashboard role={userRole} onNavigate={handleNavigate} onLogout={handleLogout} />
