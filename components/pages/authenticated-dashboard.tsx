@@ -2,17 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { MapView } from "@/components/dashboard/map-view"
 import { StationDataPanel } from "@/components/dashboard/station-data-panel"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { AlertsBanner } from "@/components/dashboard/alerts-banner"
-import { Activity, AlertTriangle, Droplets, Wind } from "lucide-react"
+import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield } from "lucide-react"
+import Link from "next/link"
 
-interface ExpertDashboardProps {
+interface AuthenticatedDashboardProps {
   role: "expert" | "admin"
 }
 
-export function ExpertDashboard({ role }: ExpertDashboardProps) {
+export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
   const [selectedStation, setSelectedStation] = useState("Vientiane")
   const [lastUpdate, setLastUpdate] = useState(new Date())
 
@@ -20,23 +22,60 @@ export function ExpertDashboard({ role }: ExpertDashboardProps) {
   useEffect(() => {
     const interval = setInterval(() => {
       setLastUpdate(new Date())
-      console.log('Expert dashboard data refreshed at:', new Date().toLocaleTimeString())
+      console.log('Dashboard data refreshed at:', new Date().toLocaleTimeString())
     }, 15 * 60 * 1000) // 15 minutes
 
     return () => clearInterval(interval)
   }, [])
 
   return (
-    <>
+    <div className="flex-1 flex flex-col overflow-hidden">
       <main className="flex-1 overflow-auto">
-        <div className="px-6 pt-4 pb-2">
+        <div className="px-6 pt-4 pb-2 flex justify-between items-center">
           <span className="text-xs text-slate-400">
             Last update: {lastUpdate.toLocaleTimeString('en-GB')} • Auto-refresh every 15 minutes
           </span>
+          {role === "admin" && (
+            <span className="text-xs font-medium text-blue-400 flex items-center gap-1">
+              <Shield className="w-3 h-3" />
+              Admin Mode
+            </span>
+          )}
         </div>
+        
         <div className="p-6 space-y-6">
+          {/* Admin Quick Actions Section */}
+          {role === "admin" && (
+            <Card className="bg-slate-800/50 border-slate-700 border-dashed">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-300">Admin Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="flex gap-4">
+                <Link href="/admin/users">
+                  <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+                    <Users className="mr-2 h-4 w-4" />
+                    Manage Users
+                  </Button>
+                </Link>
+                <Link href="/admin/data">
+                  <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+                    <Database className="mr-2 h-4 w-4" />
+                    Data Management
+                  </Button>
+                </Link>
+                <Link href="/admin/preprocessing">
+                  <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Preprocessing
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
           <AlertsBanner />
 
+          {/* Key Metrics */}
           <div className="grid grid-cols-4 gap-4">
             <Card className="bg-slate-800 border-slate-700">
               <CardContent className="p-4 flex items-center justify-between">
@@ -109,6 +148,6 @@ export function ExpertDashboard({ role }: ExpertDashboardProps) {
           </div>
         </div>
       </main>
-    </>
+    </div>
   )
 }

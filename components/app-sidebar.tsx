@@ -26,107 +26,18 @@ import { useAuth } from "@/providers/auth-provider"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { role } = useAuth()
 
-  // Define navigation items
-  const navItems = [
-    {
-      title: "Platform",
-      items: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: LayoutDashboard,
-          isActive: true,
-        },
-      ],
-    },
-    {
-      title: "Expert Tools",
-      items: [
-        {
-          title: "Advanced Modeling",
-          url: "/expert",
-          icon: Zap,
-        },
-        {
-          title: "Tune Parameters",
-          url: "/expert/tune",
-          icon: Settings2,
-        },
-        {
-          title: "Model Evaluation",
-          url: "/expert/evaluation",
-          icon: BarChart3,
-        },
-      ],
-    },
-    {
-      title: "Administration",
-      items: [
-        {
-          title: "General",
-          url: "/admin",
-          icon: Settings,
-        },
-        {
-          title: "User Management",
-          url: "/admin/users",
-          icon: Users,
-        },
-        {
-          title: "Data Management",
-          url: "/admin/data",
-          icon: Database,
-        },
-        {
-          title: "Preprocessing",
-          url: "/admin/preprocessing",
-          icon: Sliders,
-        },
-      ],
-    },
-  ]
-
-  // Filter items based on role
-  const filteredNavItems = React.useMemo(() => {
-    const items = []
-
-    // Always show Platform/Dashboard
-    items.push(navItems[0])
-
-    if (role === "expert" || role === "admin") {
-      items.push(navItems[1])
-    }
-
-    if (role === "admin") {
-      items.push(navItems[2])
-    }
-
-    return items
-  }, [role])
-
-  // Flatten the structure for NavMain if needed, or adjust NavMain to handle groups.
-  // The current NavMain expects an array of items where each item has a title, url, icon, and optional sub-items.
-  // My structure above is Group -> Items.
-  // Let's adapt the data to match NavMain's expected structure or modify NavMain.
-  // NavMain expects: { title, url, icon, isActive, items: [] }
-  
-  // Let's map my groups to NavMain items.
-  // Actually, NavMain renders a SidebarGroup for the whole list.
-  // I should probably use multiple NavMain components or modify NavMain to render groups.
-  // For simplicity, let's just pass a flat list of "sections" to NavMain, where each section is a collapsible item.
-  
-  // Re-structuring to match NavMain:
+  // Define navigation structure
   const navMainData = [
     {
       title: "Dashboard",
       url: "/dashboard",
       icon: LayoutDashboard,
       isActive: true,
-      items: [], // No sub-items for dashboard
+      items: [], // No sub-items for dashboard, but NavMain expects the array if we want it to work without crashing or we should check NavMain
     },
     {
       title: "Expert Tools",
-      url: "/expert", // Main link
+      url: "/expert",
       icon: Zap,
       items: [
         { title: "Advanced Modeling", url: "/expert" },
@@ -143,21 +54,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: "User Management", url: "/admin/users" },
         { title: "Data Management", url: "/admin/data" },
         { title: "Preprocessing", url: "/admin/preprocessing" },
+        { title: "Model Evaluation", url: "/admin/evaluation" },
       ],
     }
   ]
 
   const filteredNavMain = React.useMemo(() => {
     const items = []
-    items.push(navMainData[0]) // Dashboard
+    
+    // Dashboard is visible to all authenticated users
+    items.push(navMainData[0])
 
-    if (role === "expert" || role === "admin") {
-      items.push(navMainData[1]) // Expert Tools
+    // Expert Tools are visible ONLY to Experts
+    if (role === "expert") {
+      items.push(navMainData[1])
     }
 
+    // Administration is visible ONLY to Admins
     if (role === "admin") {
-      items.push(navMainData[2]) // Administration
+      items.push(navMainData[2])
     }
+    
     return items
   }, [role])
 

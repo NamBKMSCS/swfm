@@ -1,11 +1,11 @@
 "use client"
 
-import { AuthenticatedDashboard } from "@/components/pages/authenticated-dashboard"
+import { ModelEvaluationPage } from "@/components/pages/model-evaluation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"
 
-export default function AdminPage() {
+export default function AdminEvaluationPage() {
   const { role, isLoading } = useAuth()
 
   if (isLoading) return <div>Loading...</div>
@@ -16,7 +16,7 @@ export default function AdminPage() {
 
   return (
     <MainLayout>
-      <AuthenticatedDashboard role="admin" />
+      <ModelEvaluationPage role="admin" />
     </MainLayout>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,16 +16,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-import { updateUserStatus, deleteUser, User } from "@/app/actions/user-actions"
+import { updateUserStatus, deleteUser, getUsers, User } from "@/app/actions/user-actions"
 
 export function UserManagementPage() {
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  // Mock data for initial render, in real app this would come from server
-  const [users, setUsers] = useState<User[]>([
-    { id: "1", name: "Admin User", email: "admin@swfm.com", role: "admin", status: "active", createdAt: "2023-10-27", lastLogin: "2023-10-27T10:00:00Z" },
-    { id: "2", name: "Expert User", email: "expert@swfm.com", role: "expert", status: "active", createdAt: "2023-10-26", lastLogin: "2023-10-26T15:30:00Z" },
-    { id: "3", name: "Guest User", email: "guest@example.com", role: "guest", status: "pending", createdAt: "2023-10-20", lastLogin: "2023-10-20T09:15:00Z" },
-  ])
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getUsers()
+        setUsers(data)
+      } catch (error) {
+        toast.error("Failed to fetch users")
+        console.error(error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchUsers()
+  }, [])
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 

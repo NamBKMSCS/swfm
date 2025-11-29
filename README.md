@@ -1,5 +1,10 @@
 # SWFM
 
+## Requisites
+
+- Node.js v22.10.0
+- Docker
+ 
 ## Development Process
 
 1. Clone this repository

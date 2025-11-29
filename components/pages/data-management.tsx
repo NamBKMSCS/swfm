@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, Plus, Upload, Download, Filter, Trash2, Edit, CheckCircle2, AlertCircle, FileSpreadsheet, Calendar as CalendarIcon, RefreshCw, Settings } from "lucide-react"
+import { Search, Plus, Upload, Download, Filter, Trash2, Edit2, CheckCircle2, AlertCircle, Calendar as CalendarIcon, RefreshCw, Settings } from "lucide-react"
 import { getDataRecords, addDataRecord, updateDataRecord, deleteDataRecord, verifyDataRecord, getStations, DataRecord } from "@/app/actions/data-actions"
 import { toast } from "sonner"
 import Link from "next/link"
