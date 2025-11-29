@@ -44,25 +44,6 @@ export function StationDataPanel({ station, role }: StationDataPanelProps) {
           </div>
         </CardContent>
       </Card>
-
-      {/* Quick Actions */}
-      {role !== "guest" && (
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white text-sm">Advanced Options</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button className="w-full bg-purple-600 hover:bg-purple-700 text-sm">Tune Parameters</Button>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm">Run Model</Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Export */}
-      <Button className="w-full bg-slate-700 hover:bg-slate-600">
-        <Download className="w-4 h-4 mr-2" />
-        Export Data
-      </Button>
     </div>
   )
 }

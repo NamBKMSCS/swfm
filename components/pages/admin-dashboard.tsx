@@ -1,84 +1,97 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
-import { UsersTable } from "@/components/admin/users-table"
-import { DataSourcesTable } from "@/components/admin/data-sources-table"
-import { SystemHealthPanel } from "@/components/admin/system-health"
-import { Users, Database } from "lucide-react"
-import { getUsers } from "@/app/actions/user-actions"
-import { getDataRecords } from "@/app/actions/data-actions"
+import { Users, Database, Settings, Activity, AlertTriangle, Shield } from "lucide-react"
+import Link from "next/link"
 
-interface AdminDashboardProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
-  onLogout: () => void
-}
-
-export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
-  const [userCount, setUserCount] = useState<number | null>(null)
-  const [dataCount, setDataCount] = useState<number | null>(null)
-
-  useEffect(() => {
-    getUsers().then(users => setUserCount(users.length))
-    getDataRecords().then(records => setDataCount(records.length))
-  }, [])
-
+export function AdminDashboard() {
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar currentPage="admin" role="admin" onNavigate={onNavigate} onLogout={onLogout} />
+    <div className="p-6 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-200">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">1,234</div>
+            <p className="text-xs text-slate-400">+20% from last month</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-200">System Health</CardTitle>
+            <Activity className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500">98.2%</div>
+            <p className="text-xs text-slate-400">Uptime in last 30 days</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-200">Active Alerts</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-500">3</div>
+            <p className="text-xs text-slate-400">Requires attention</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Administration Panel" role="admin" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">Quick Actions</CardTitle>
+            <CardDescription className="text-slate-400">Manage your system efficiently</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Link href="/admin/users">
+              <Button variant="outline" className="w-full justify-start border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+                <Users className="mr-2 h-4 w-4" />
+                Manage Users
+              </Button>
+            </Link>
+            <Link href="/admin/data">
+              <Button variant="outline" className="w-full justify-start border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+                <Database className="mr-2 h-4 w-4" />
+                Data Management
+              </Button>
+            </Link>
+            <Link href="/admin/preprocessing">
+              <Button variant="outline" className="w-full justify-start border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+                <Settings className="mr-2 h-4 w-4" />
+                Preprocessing Configuration
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-6 space-y-6">
-            {/* System Health */}
-            <SystemHealthPanel />
-
-            <div className="grid grid-cols-2 gap-6">
-              {/* Users Management */}
-              <Card className="col-span-1 bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">Recent Activity</CardTitle>
+            <CardDescription className="text-slate-400">Latest system events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { action: "User Login", user: "admin@swfm.com", time: "2 mins ago" },
+                { action: "Data Update", user: "System", time: "15 mins ago" },
+                { action: "New User", user: "guest@example.com", time: "1 hour ago" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between border-b border-slate-700 pb-2 last:border-0 last:pb-0">
                   <div>
-                    <CardTitle className="text-white">User Management</CardTitle>
-                    <CardDescription className="text-slate-400 text-xs">
-                      {userCount !== null ? `${userCount} users` : 'Loading...'}
-                    </CardDescription>
+                    <p className="text-sm font-medium text-white">{item.action}</p>
+                    <p className="text-xs text-slate-400">{item.user}</p>
                   </div>
-                  <Button onClick={() => onNavigate("users")} className="bg-blue-600 hover:bg-blue-700">
-                    <Users className="w-4 h-4 mr-2" />
-                    Manage
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <UsersTable />
-                </CardContent>
-              </Card>
-
-              {/* Data Management */}
-              <Card className="col-span-1 bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-white">Data Management</CardTitle>
-                    <CardDescription className="text-slate-400 text-xs">
-                      {dataCount !== null ? `${dataCount} records` : 'Loading...'}
-                    </CardDescription>
-                  </div>
-                  <Button onClick={() => onNavigate("data")} className="bg-blue-600 hover:bg-blue-700">
-                    <Database className="w-4 h-4 mr-2" />
-                    Manage
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <DataSourcesTable />
-                </CardContent>
-              </Card>
+                  <span className="text-xs text-slate-500">{item.time}</span>
+                </div>
+              ))}
             </div>
-          </div>
-        </main>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

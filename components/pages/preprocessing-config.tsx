@@ -1,18 +1,12 @@
 "use client"
 
 import { useState, useEffect, useTransition } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
-import { Settings, AlertCircle, CheckCircle2, ChevronDown, Loader2 } from "lucide-react"
-import { getPreprocessingConfigs, savePreprocessingConfig } from "@/app/actions/model-actions"
+import { Switch } from "@/components/ui/switch"
+import { Settings, AlertCircle, CheckCircle2, ChevronDown, Loader2, Save, Play, Settings2 } from "lucide-react"
+import { getPreprocessingConfigs, savePreprocessingConfig, runPreprocessing, PreprocessingConfig } from "@/app/actions/preprocessing-actions"
 import { toast } from "sonner"
-
-interface PreprocessingConfigPageProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
-  onLogout: () => void
-}
 
 interface PreprocessingMethod {
   id: string
@@ -90,10 +84,11 @@ const defaultMethods: PreprocessingMethod[] = [
   },
 ]
 
-export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingConfigPageProps) {
+export function PreprocessingConfigPage() {
   const [methods, setMethods] = useState<PreprocessingMethod[]>(defaultMethods)
   const [expandedMethod, setExpandedMethod] = useState<string | null>("outlier")
   const [isPending, startTransition] = useTransition()
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
     loadConfigs()
@@ -165,6 +160,18 @@ export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingC
     })
   }
 
+  const handleRun = async () => {
+    setIsProcessing(true)
+    try {
+      await runPreprocessing()
+      toast.success("Preprocessing pipeline completed")
+    } catch (error) {
+      toast.error("Preprocessing failed")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   const handleResetToDefault = () => {
     if (confirm("Reset all preprocessing configurations to default values?")) {
       setMethods(defaultMethods)
@@ -175,220 +182,204 @@ export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingC
   const enabledMethodsCount = methods.filter((m) => m.enabled).length
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar currentPage="preprocessing" role="admin" onNavigate={onNavigate} onLogout={onLogout} />
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 overflow-auto p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Preprocessing Configuration</h2>
+            <p className="text-slate-400">Configure data cleaning and transformation pipeline</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleSaveConfig} disabled={isPending} className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+              {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Config
+            </Button>
+            <Button onClick={handleRun} disabled={isProcessing} className="bg-blue-600 hover:bg-blue-700">
+              <Play className="w-4 h-4 mr-2" />
+              {isProcessing ? "Running..." : "Run Pipeline"}
+            </Button>
+          </div>
+        </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Data Preprocessing Configuration" role="admin" />
-
-        <main className="flex-1 overflow-auto">
-          <div className="p-6 space-y-6">
-            {/* Overview Card */}
-            <Card className="bg-slate-800 border-slate-700">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-slate-300">Preprocessing Pipeline</h3>
-                    <p className="text-2xl font-bold text-white">{enabledMethodsCount} methods active</p>
-                    <p className="text-xs text-slate-400 mt-2">
-                      Data automatically preprocessed when synced from monitoring.mrcmekong.org
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="inline-flex items-center gap-2 bg-blue-900/30 text-blue-300 px-3 py-2 rounded-lg text-xs font-medium border border-blue-700/50">
-                      <Settings className="w-4 h-4" />
-                      Advanced Config
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Info Banner */}
-            <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-amber-300">Configuration Impact</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Changes apply to new data synced after saving. Historical data can be reprocessed from Data
-                  Management.
+        {/* Overview Card */}
+        <Card className="bg-slate-800 border-slate-700">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-slate-300">Preprocessing Pipeline</h3>
+                <p className="text-2xl font-bold text-white">{enabledMethodsCount} methods active</p>
+                <p className="text-xs text-slate-400 mt-2">
+                  Data automatically preprocessed when synced from monitoring.mrcmekong.org
                 </p>
               </div>
+              <div className="text-right">
+                <div className="inline-flex items-center gap-2 bg-blue-900/30 text-blue-300 px-3 py-2 rounded-lg text-xs font-medium border border-blue-700/50">
+                  <Settings className="w-4 h-4" />
+                  Advanced Config
+                </div>
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Preprocessing Methods */}
-            <div className="space-y-3">
-              {methods.map((method) => (
-                <Card key={method.id} className="bg-slate-800 border-slate-700">
+        {/* Info Banner */}
+        <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-300">Configuration Impact</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Changes apply to new data synced after saving. Historical data can be reprocessed from Data
+              Management.
+            </p>
+          </div>
+        </div>
+
+        {/* Preprocessing Methods */}
+        <div className="space-y-3">
+          {methods.map((method) => (
+            <Card key={method.id} className="bg-slate-800 border-slate-700">
+              <div
+                onClick={() => setExpandedMethod(expandedMethod === method.id ? null : method.id)}
+                className="cursor-pointer p-4 flex items-center justify-between hover:bg-slate-700/50 transition"
+              >
+                <div className="flex items-center gap-4 flex-1">
                   <div
-                    onClick={() => setExpandedMethod(expandedMethod === method.id ? null : method.id)}
-                    className="cursor-pointer p-4 flex items-center justify-between hover:bg-slate-700/50 transition"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                    }}
                   >
-                    <div className="flex items-center gap-4 flex-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleToggleMethod(method.id)
-                        }}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                          method.enabled ? "bg-blue-600" : "bg-slate-600"
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                            method.enabled ? "translate-x-5" : "translate-x-1"
-                          }`}
-                        />
-                      </button>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-white">{method.name}</h3>
-                        <p className="text-xs text-slate-400 mt-1">{method.description}</p>
-                      </div>
-                    </div>
-                    <ChevronDown
-                      className={`w-5 h-5 text-slate-400 transition ${
-                        expandedMethod === method.id ? "rotate-180" : ""
-                      }`}
+                    <Switch 
+                      checked={method.enabled} 
+                      onCheckedChange={() => handleToggleMethod(method.id)} 
                     />
                   </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-white">{method.name}</h3>
+                    <p className="text-xs text-slate-400 mt-1">{method.description}</p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`w-5 h-5 text-slate-400 transition ${
+                    expandedMethod === method.id ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
 
-                  {/* Expanded Parameters */}
-                  {expandedMethod === method.id && (
-                    <div className="border-t border-slate-700 p-4 space-y-4">
-                      {Object.entries(method.parameters).map(([key, param]) => (
-                        <div key={key}>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs font-medium text-slate-300">{param.label}</label>
-                            {typeof param.value === "number" && (
-                              <span className="text-xs font-mono text-slate-400">{param.value}</span>
-                            )}
-                          </div>
+              {/* Expanded Parameters */}
+              {expandedMethod === method.id && (
+                <div className="border-t border-slate-700 p-4 space-y-4">
+                  {Object.entries(method.parameters).map(([key, param]) => (
+                    <div key={key}>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-medium text-slate-300">{param.label}</label>
+                        {typeof param.value === "number" && (
+                          <span className="text-xs font-mono text-slate-400">{param.value}</span>
+                        )}
+                      </div>
 
-                          {typeof param.value === "number" ? (
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="range"
-                                min={param.min || 0}
-                                max={param.max || 100}
-                                step={param.step || 1}
-                                value={param.value}
-                                onChange={(e) =>
-                                  handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
-                                }
-                                className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                              />
-                              <input
-                                type="number"
-                                min={param.min || 0}
-                                max={param.max || 100}
-                                step={param.step || 1}
-                                value={param.value}
-                                onChange={(e) =>
-                                  handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
-                                }
-                                className="w-16 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-xs"
-                              />
-                            </div>
-                          ) : (
-                            <select
-                              value={param.value}
-                              onChange={(e) => handleParameterChange(method.id, key, e.target.value)}
-                              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                            >
-                              {key === "method" && method.id === "outlier" && (
-                                <>
-                                  <option value="iqr">Interquartile Range (IQR)</option>
-                                  <option value="zscore">Z-Score</option>
-                                  <option value="mad">Median Absolute Deviation</option>
-                                </>
-                              )}
-                              {key === "action" && method.id === "outlier" && (
-                                <>
-                                  <option value="interpolate">Interpolate</option>
-                                  <option value="remove">Remove</option>
-                                  <option value="flag">Flag Only</option>
-                                </>
-                              )}
-                              {key === "method" && method.id === "missing" && (
-                                <>
-                                  <option value="linear-interpolation">Linear Interpolation</option>
-                                  <option value="forward-fill">Forward Fill</option>
-                                  <option value="mean">Mean Value</option>
-                                  <option value="remove">Remove Records</option>
-                                </>
-                              )}
-                              {key === "method" && method.id === "smoothing" && (
-                                <>
-                                  <option value="moving-average">Moving Average</option>
-                                  <option value="exponential">Exponential Smoothing</option>
-                                  <option value="gaussian">Gaussian Kernel</option>
-                                </>
-                              )}
-                              {key === "method" && method.id === "normalization" && (
-                                <>
-                                  <option value="z-score">Z-Score Normalization</option>
-                                  <option value="min-max">Min-Max Scaling</option>
-                                  <option value="robust">Robust Scaling</option>
-                                </>
-                              )}
-                              {key === "referenceStation" && (
-                                <>
-                                  <option value="Jinghong">Jinghong</option>
-                                  <option value="Chiang Saen">Chiang Saen</option>
-                                  <option value="Luang Prabang">Luang Prabang</option>
-                                  <option value="Vientiane">Vientiane</option>
-                                  <option value="Pakse">Pakse</option>
-                                  <option value="Stung Treng">Stung Treng</option>
-                                  <option value="Kratie">Kratie</option>
-                                  <option value="Tan Chau">Tan Chau</option>
-                                  <option value="Châu Đốc">Châu Đốc</option>
-                                </>
-                              )}
-                              {key === "timezone" && (
-                                <>
-                                  <option value="UTC+7">UTC+7 (Bangkok)</option>
-                                  <option value="UTC+6">UTC+6 (Bangkok)</option>
-                                  <option value="UTC">UTC</option>
-                                </>
-                              )}
-                              {key === "format" && (
-                                <>
-                                  <option value="ISO8601">ISO 8601</option>
-                                  <option value="Unix">Unix Timestamp</option>
-                                </>
-                              )}
-                            </select>
-                          )}
+                      {typeof param.value === "number" ? (
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="range"
+                            min={param.min || 0}
+                            max={param.max || 100}
+                            step={param.step || 1}
+                            value={param.value}
+                            onChange={(e) =>
+                              handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
+                            }
+                            className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                          />
+                          <input
+                            type="number"
+                            min={param.min || 0}
+                            max={param.max || 100}
+                            step={param.step || 1}
+                            value={param.value}
+                            onChange={(e) =>
+                              handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
+                            }
+                            className="w-16 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-xs"
+                          />
                         </div>
-                      ))}
+                      ) : (
+                        <select
+                          value={param.value}
+                          onChange={(e) => handleParameterChange(method.id, key, e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                        >
+                          {key === "method" && method.id === "outlier" && (
+                            <>
+                              <option value="iqr">Interquartile Range (IQR)</option>
+                              <option value="zscore">Z-Score</option>
+                              <option value="mad">Median Absolute Deviation</option>
+                            </>
+                          )}
+                          {key === "action" && method.id === "outlier" && (
+                            <>
+                              <option value="interpolate">Interpolate</option>
+                              <option value="remove">Remove</option>
+                              <option value="flag">Flag Only</option>
+                            </>
+                          )}
+                          {key === "method" && method.id === "missing" && (
+                            <>
+                              <option value="linear-interpolation">Linear Interpolation</option>
+                              <option value="forward-fill">Forward Fill</option>
+                              <option value="mean">Mean Value</option>
+                              <option value="remove">Remove Records</option>
+                            </>
+                          )}
+                          {key === "method" && method.id === "smoothing" && (
+                            <>
+                              <option value="moving-average">Moving Average</option>
+                              <option value="exponential">Exponential Smoothing</option>
+                              <option value="gaussian">Gaussian Kernel</option>
+                            </>
+                          )}
+                          {key === "method" && method.id === "normalization" && (
+                            <>
+                              <option value="z-score">Z-Score Normalization</option>
+                              <option value="min-max">Min-Max Scaling</option>
+                              <option value="robust">Robust Scaling</option>
+                            </>
+                          )}
+                          {key === "referenceStation" && (
+                            <>
+                              <option value="Jinghong">Jinghong</option>
+                              <option value="Chiang Saen">Chiang Saen</option>
+                              <option value="Luang Prabang">Luang Prabang</option>
+                              <option value="Vientiane">Vientiane</option>
+                              <option value="Pakse">Pakse</option>
+                              <option value="Stung Treng">Stung Treng</option>
+                              <option value="Kratie">Kratie</option>
+                              <option value="Tan Chau">Tan Chau</option>
+                              <option value="Châu Đốc">Châu Đốc</option>
+                            </>
+                          )}
+                          {key === "timezone" && (
+                            <>
+                              <option value="UTC+7">UTC+7 (Bangkok)</option>
+                              <option value="UTC+6">UTC+6 (Bangkok)</option>
+                              <option value="UTC">UTC</option>
+                            </>
+                          )}
+                          {key === "format" && (
+                            <>
+                              <option value="ISO8601">ISO 8601</option>
+                              <option value="Unix">Unix Timestamp</option>
+                            </>
+                          )}
+                        </select>
+                      )}
                     </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 sticky bottom-6">
-              <Button
-                onClick={handleSaveConfig}
-                disabled={isPending}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
-              >
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {isPending ? "Saving..." : "Save Configuration"}
-              </Button>
-              <Button
-                onClick={handleResetToDefault}
-                variant="outline"
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 bg-transparent"
-              >
-                Reset to Defaults
-              </Button>
-            </div>
-          </div>
-        </main>
-      </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      </main>
     </div>
   )
 }
-

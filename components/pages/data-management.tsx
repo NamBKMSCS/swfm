@@ -1,20 +1,16 @@
 "use client"
 
 import { useState, useEffect, useTransition } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
-import { Plus, Edit2, Trash2, AlertCircle, Settings } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Search, Plus, Upload, Download, Filter, Trash2, Edit, CheckCircle2, AlertCircle, FileSpreadsheet, Calendar as CalendarIcon, RefreshCw, Settings } from "lucide-react"
 import { getDataRecords, addDataRecord, updateDataRecord, deleteDataRecord, verifyDataRecord, getStations, DataRecord } from "@/app/actions/data-actions"
 import { toast } from "sonner"
+import Link from "next/link"
 
-interface DataManagementPageProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
-  onLogout: () => void
-}
-
-export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageProps) {
+export function DataManagementPage() {
   const [records, setRecords] = useState<DataRecord[]>([])
   const [stations, setStations] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -142,245 +138,266 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar currentPage="data" role="admin" onNavigate={onNavigate} onLogout={onLogout} />
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 overflow-auto p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Data Management</h2>
+            <p className="text-slate-400">Manage and verify water level data records</p>
+          </div>
+        </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Data Management" role="admin" />
-
-        <main className="flex-1 overflow-auto">
-          <div className="p-6 space-y-6">
-            {/* Data Collection Status */}
-            <Card className="bg-slate-800 border-slate-700">
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="bg-slate-700/50 rounded-lg p-4">
-                    <p className="text-xs text-slate-400">Total Records</p>
-                    <p className="text-2xl font-bold text-white mt-2">{records.length}</p>
-                  </div>
-                  <div className="bg-green-900/20 rounded-lg p-4 border border-green-700/50">
-                    <p className="text-xs text-slate-400">Verified</p>
-                    <p className="text-2xl font-bold text-green-300 mt-2">
-                      {records.filter((r) => r.status === "verified").length}
-                    </p>
-                  </div>
-                  <div className="bg-orange-900/20 rounded-lg p-4 border border-orange-700/50">
-                    <p className="text-xs text-slate-400">Pending Review</p>
-                    <p className="text-2xl font-bold text-orange-300 mt-2">
-                      {records.filter((r) => r.status === "pending").length}
-                    </p>
-                  </div>
-                  <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-700/50">
-                    <p className="text-xs text-slate-400">Auto-Synced</p>
-                    <p className="text-2xl font-bold text-blue-300 mt-2">
-                      {records.filter((r) => r.source === "automated").length}
-                    </p>
-                  </div>
+        <div className="space-y-6">
+          {/* Data Collection Status */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <p className="text-xs text-slate-400">Total Records</p>
+                  <p className="text-2xl font-bold text-white mt-2">{records.length}</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Auto-sync Info */}
-            <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-blue-300">Automated Data Synchronization</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  System automatically syncs water level, flow, and rainfall data from monitoring.mrcmekong.org every 15
-                  minutes. Last sync: 5 minutes ago.
-                </p>
+                <div className="bg-green-900/20 rounded-lg p-4 border border-green-700/50">
+                  <p className="text-xs text-slate-400">Verified</p>
+                  <p className="text-2xl font-bold text-green-300 mt-2">
+                    {records.filter((r) => r.status === "verified").length}
+                  </p>
+                </div>
+                <div className="bg-orange-900/20 rounded-lg p-4 border border-orange-700/50">
+                  <p className="text-xs text-slate-400">Pending Review</p>
+                  <p className="text-2xl font-bold text-orange-300 mt-2">
+                    {records.filter((r) => r.status === "pending").length}
+                  </p>
+                </div>
+                <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-700/50">
+                  <p className="text-xs text-slate-400">Auto-Synced</p>
+                  <p className="text-2xl font-bold text-blue-300 mt-2">
+                    {records.filter((r) => r.source === "automated").length}
+                  </p>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Add Record Form */}
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div>
-                  <CardTitle className="text-white">{editingId ? "Edit Data Record" : "Add New Data Record"}</CardTitle>
-                  <CardDescription className="text-slate-400 text-xs">
-                    Manually add or update monitoring data
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
+          {/* Auto-sync Info */}
+          <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-blue-300">Automated Data Synchronization</p>
+              <p className="text-xs text-slate-400 mt-1">
+                System automatically syncs water level, flow, and rainfall data from monitoring.mrcmekong.org every 15
+                minutes. Last sync: 5 minutes ago.
+              </p>
+            </div>
+          </div>
+
+          {/* Add Record Form */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-white">{editingId ? "Edit Data Record" : "Add New Data Record"}</CardTitle>
+                <CardDescription className="text-slate-400 text-xs">
+                  Manually add or update monitoring data
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Link href="/admin/preprocessing">
                   <Button
-                    onClick={() => onNavigate("preprocessing")}
                     variant="outline"
                     className="border-slate-600 text-slate-300 hover:bg-slate-700"
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Preprocessing
                   </Button>
-                  <Button
-                    onClick={() => {
-                      setShowAddForm(!showAddForm)
-                      setEditingId(null)
-                      setFormData({
-                        date: new Date().toISOString().split("T")[0],
-                        time: "12:00",
-                        station: stations[0] || "",
-                        value: "",
-                        unit: "meters",
-                      })
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {showAddForm ? "Cancel" : "Add Record"}
-                  </Button>
-                </div>
-              </CardHeader>
-
-              {showAddForm && (
-                <CardContent className="space-y-4 border-t border-slate-700 pt-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Date</label>
-                      <input
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  {showAddForm ? "Hide Form" : "Show Form"}
+                </Button>
+              </div>
+            </CardHeader>
+            {showAddForm && (
+              <CardContent>
+                <div className="grid grid-cols-5 gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-400">Date</Label>
+                    <div className="relative">
+                      <CalendarIcon className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
+                      <Input
                         type="date"
                         value={formData.date}
                         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full mt-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                        className="pl-8 bg-slate-900 border-slate-700 text-white"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Time</label>
-                      <input
-                        type="time"
-                        value={formData.time}
-                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                        className="w-full mt-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Station</label>
-                      <select
-                        value={formData.station}
-                        onChange={(e) => setFormData({ ...formData, station: e.target.value })}
-                        className="w-full mt-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                      >
-                        {stations.map((station) => (
-                          <option key={station} value={station}>
-                            {station}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Water Level Value</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="number"
-                          placeholder="0.00"
-                          step="0.01"
-                          value={formData.value}
-                          onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                          className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-slate-500 text-sm"
-                        />
-                        <select
-                          value={formData.unit}
-                          onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                          className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                        >
-                          <option>meters</option>
-                          <option>cm</option>
-                        </select>
-                      </div>
                     </div>
                   </div>
-                  <Button onClick={handleAddRecord} disabled={isPending} className="w-full bg-green-600 hover:bg-green-700 text-white disabled:opacity-50">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-400">Time</Label>
+                    <Input
+                      type="time"
+                      value={formData.time}
+                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-400">Station</Label>
+                    <select
+                      value={formData.station}
+                      onChange={(e) => setFormData({ ...formData, station: e.target.value })}
+                      className="w-full h-10 px-3 rounded-md bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    >
+                      <option value="" disabled>Select Station</option>
+                      {stations.map((station) => (
+                        <option key={station} value={station}>
+                          {station}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-400">Water Level (m)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.value}
+                      onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleAddRecord} 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={isPending}
+                  >
+                    {isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
                     {editingId ? "Update Record" : "Add Record"}
                   </Button>
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Data Records Table */}
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">Data Records</CardTitle>
-                <CardDescription className="text-slate-400 text-xs">
-                  All monitoring data entries with verification status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-white">Loading data...</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-700">
-                          <th className="text-left py-3 px-4 font-medium text-slate-300">Date/Time</th>
-                          <th className="text-left py-3 px-4 font-medium text-slate-300">Station</th>
-                          <th className="text-left py-3 px-4 font-medium text-slate-300">Value</th>
-                          <th className="text-left py-3 px-4 font-medium text-slate-300">Source</th>
-                          <th className="text-left py-3 px-4 font-medium text-slate-300">Status</th>
-                          <th className="text-left py-3 px-4 font-medium text-slate-300">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {records.map((record) => (
-                          <tr key={record.id} className="border-b border-slate-700 hover:bg-slate-700/50">
-                            <td className="py-3 px-4 text-white font-medium">
-                              {record.date} {record.time}
-                            </td>
-                            <td className="py-3 px-4 text-slate-300">{record.station}</td>
-                            <td className="py-3 px-4 text-white font-mono">
-                              {record.value.toFixed(2)} {record.unit}
-                            </td>
-                            <td className="py-3 px-4">
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                  record.source === "automated"
-                                    ? "bg-blue-900/30 text-blue-300"
-                                    : "bg-slate-700/50 text-slate-300"
-                                }`}
-                              >
-                                {record.source === "automated" ? "Auto" : "Manual"}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <button
-                                onClick={() => handleVerifyRecord(record.id, record.status)}
-                                disabled={isPending}
-                                className={`px-2 py-1 rounded text-xs font-medium cursor-pointer disabled:opacity-50 ${
-                                  record.status === "verified"
-                                    ? "bg-green-900/30 text-green-300"
-                                    : "bg-orange-900/30 text-orange-300"
-                                }`}
-                              >
-                                {record.status === "verified" ? "Verified" : "Pending"}
-                              </button>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleEditRecord(record)}
-                                  disabled={isPending}
-                                  className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-blue-400 disabled:opacity-50"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteRecord(record.id)}
-                                  disabled={isPending}
-                                  className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-red-400 disabled:opacity-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                </div>
               </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
+            )}
+          </Card>
+
+          {/* Data Table */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-white">Data Records</CardTitle>
+              <div className="flex gap-2">
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search records..."
+                    className="pl-8 bg-slate-900 border-slate-700 text-white h-9"
+                  />
+                </div>
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                </Button>
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import
+                </Button>
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-slate-700 overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-900 text-slate-300 font-medium">
+                    <tr>
+                      <th className="p-3">Date & Time</th>
+                      <th className="p-3">Station</th>
+                      <th className="p-3">Value</th>
+                      <th className="p-3">Source</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-400">
+                          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                          Loading data...
+                        </td>
+                      </tr>
+                    ) : records.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-400">
+                          No records found
+                        </td>
+                      </tr>
+                    ) : (
+                      records.map((record) => (
+                        <tr key={record.id} className="hover:bg-slate-700/50 transition-colors">
+                          <td className="p-3 text-slate-300">
+                            <div>{record.date}</div>
+                            <div className="text-xs text-slate-500">{record.time}</div>
+                          </td>
+                          <td className="p-3 text-white font-medium">{record.station}</td>
+                          <td className="p-3 text-slate-300">
+                            {record.value.toFixed(2)} <span className="text-xs text-slate-500">{record.unit}</span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                              record.source === "automated" 
+                                ? "bg-blue-900/50 text-blue-200" 
+                                : "bg-slate-700 text-slate-300"
+                            }`}>
+                              {record.source}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <button
+                              onClick={() => handleVerifyRecord(record.id, record.status)}
+                              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                record.status === "verified"
+                                  ? "bg-green-900/50 text-green-200 hover:bg-green-900/70"
+                                  : "bg-orange-900/50 text-orange-200 hover:bg-orange-900/70"
+                              }`}
+                            >
+                              {record.status === "verified" ? (
+                                <CheckCircle2 className="w-3 h-3" />
+                              ) : (
+                                <AlertCircle className="w-3 h-3" />
+                              )}
+                              <span className="capitalize">{record.status}</span>
+                            </button>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => handleEditRecord(record)}
+                                className="p-1 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteRecord(record.id)}
+                                className="p-1 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   )
 }

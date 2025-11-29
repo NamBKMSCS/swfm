@@ -2,20 +2,18 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
 import { EvaluationMetrics } from "@/components/evaluation/evaluation-metrics"
 import { AccuracyChart } from "@/components/evaluation/accuracy-chart"
 import { ErrorDistribution } from "@/components/evaluation/error-distribution"
 import { getEvaluationMetrics } from "@/app/actions/analysis-actions"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { RegressionAnalysisPage } from "@/components/pages/regression-analysis"
 
 interface ModelEvaluationPageProps {
   role: "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin" | "tune" | "users" | "data" | "preprocessing" | "map" | "regression") => void
-  onLogout: () => void
 }
 
-export function ModelEvaluationPage({ role, onNavigate, onLogout }: ModelEvaluationPageProps) {
+export function ModelEvaluationPage({ role }: ModelEvaluationPageProps) {
   const [metrics, setMetrics] = useState<any[]>([])
 
   useEffect(() => {
@@ -27,18 +25,26 @@ export function ModelEvaluationPage({ role, onNavigate, onLogout }: ModelEvaluat
   }, [])
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar currentPage="evaluation" role={role} onNavigate={onNavigate} onLogout={onLogout} />
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 overflow-auto p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Model Evaluation & Analysis</h2>
+            <p className="text-slate-400">Analyze model performance and regression metrics</p>
+          </div>
+        </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Model Evaluation & Analysis" role={role} />
+        <Tabs defaultValue="evaluation" className="space-y-4">
+          <TabsList className="bg-slate-800 border-slate-700">
+            <TabsTrigger value="evaluation">Model Evaluation</TabsTrigger>
+            <TabsTrigger value="regression">Regression Analysis</TabsTrigger>
+          </TabsList>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-6 space-y-6">
+          <TabsContent value="evaluation" className="space-y-6">
             {/* Key Metrics */}
             <EvaluationMetrics />
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-slate-800 border-slate-700">
                 <CardHeader>
                   <CardTitle className="text-white">Forecast Accuracy by Station</CardTitle>
@@ -111,9 +117,13 @@ export function ModelEvaluationPage({ role, onNavigate, onLogout }: ModelEvaluat
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </main>
-      </div>
+          </TabsContent>
+
+          <TabsContent value="regression">
+            <RegressionAnalysisPage role={role} />
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   )
 }
