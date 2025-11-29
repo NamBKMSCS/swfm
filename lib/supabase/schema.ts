@@ -95,7 +95,10 @@ export type Database = {
           rainfall_24h: number | null;
           rainfall_6h: number | null;
           rainfall_7to7: number | null;
+          source: string | null;
           station_id: number;
+          status: string | null;
+          unit: string | null;
           water_level: number | null;
         };
         Insert: {
@@ -110,7 +113,10 @@ export type Database = {
           rainfall_24h?: number | null;
           rainfall_6h?: number | null;
           rainfall_7to7?: number | null;
+          source?: string | null;
           station_id: number;
+          status?: string | null;
+          unit?: string | null;
           water_level?: number | null;
         };
         Update: {
@@ -125,7 +131,10 @@ export type Database = {
           rainfall_24h?: number | null;
           rainfall_6h?: number | null;
           rainfall_7to7?: number | null;
+          source?: string | null;
           station_id?: number;
+          status?: string | null;
+          unit?: string | null;
           water_level?: number | null;
         };
         Relationships: [

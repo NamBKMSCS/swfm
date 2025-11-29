@@ -1,132 +1,102 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
 import { Plus, Edit2, Trash2, AlertCircle, Settings } from "lucide-react"
+import { getDataRecords, addDataRecord, updateDataRecord, deleteDataRecord, verifyDataRecord, getStations, DataRecord } from "@/app/actions/data-actions"
+import { toast } from "sonner"
 
 interface DataManagementPageProps {
   onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
 }
 
-interface DataRecord {
-  id: string
-  date: string
-  time: string
-  station: string
-  value: number
-  unit: string
-  source: "manual" | "automated"
-  status: "verified" | "pending"
-}
-
 export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageProps) {
-  const [records, setRecords] = useState<DataRecord[]>([
-    {
-      id: "1",
-      date: "2024-11-05",
-      time: "10:30",
-      station: "Jinghong",
-      value: 3.21,
-      unit: "meters",
-      source: "automated",
-      status: "verified",
-    },
-    {
-      id: "2",
-      date: "2024-11-05",
-      time: "09:15",
-      station: "Chiang Saen",
-      value: 3.52,
-      unit: "meters",
-      source: "automated",
-      status: "verified",
-    },
-    {
-      id: "3",
-      date: "2024-11-05",
-      time: "08:45",
-      station: "Vientiane",
-      value: 3.85,
-      unit: "meters",
-      source: "automated",
-      status: "verified",
-    },
-    {
-      id: "3",
-      date: "2024-11-04",
-      time: "16:45",
-      station: "Nakhon Phanom",
-      value: 5.78,
-      unit: "meters",
-      source: "manual",
-      status: "pending",
-    },
-    {
-      id: "4",
-      date: "2024-11-04",
-      time: "14:20",
-      station: "Mukdahan",
-      value: 3.34,
-      unit: "meters",
-      source: "manual",
-      status: "verified",
-    },
-  ])
+  const [records, setRecords] = useState<DataRecord[]>([])
+  const [stations, setStations] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isPending, startTransition] = useTransition()
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     time: "12:00",
-    station: "Jinghong",
+    station: "",
     value: "",
     unit: "meters",
   })
 
-  const stations = ["Jinghong", "Chiang Saen", "Luang Prabang", "Vientiane", "Pakse", "Stung Treng", "Kratie", "Tan Chau", "Châu Đốc"]
+  useEffect(() => {
+    fetchData()
+    fetchStations()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+      const data = await getDataRecords()
+      setRecords(data)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+      toast.error("Failed to fetch data records")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchStations = async () => {
+    try {
+      const data = await getStations()
+      setStations(data)
+      if (data.length > 0 && !formData.station) {
+        setFormData(prev => ({ ...prev, station: data[0] }))
+      }
+    } catch (error) {
+      console.error("Error fetching stations:", error)
+    }
+  }
 
   const handleAddRecord = () => {
     if (formData.date && formData.time && formData.station && formData.value) {
-      if (editingId) {
-        setRecords(
-          records.map((r) =>
-            r.id === editingId
-              ? {
-                  ...r,
-                  date: formData.date,
-                  time: formData.time,
-                  station: formData.station,
-                  value: Number.parseFloat(formData.value),
-                }
-              : r,
-          ),
-        )
-        setEditingId(null)
-      } else {
-        const newRecord: DataRecord = {
-          id: String(records.length + 1),
-          date: formData.date,
-          time: formData.time,
-          station: formData.station,
-          value: Number.parseFloat(formData.value),
-          unit: formData.unit,
-          source: "manual",
-          status: "pending",
+      startTransition(async () => {
+        try {
+          const payload = {
+            date: formData.date,
+            time: formData.time,
+            station: formData.station,
+            value: parseFloat(formData.value),
+            unit: formData.unit
+          }
+
+          if (editingId) {
+            await updateDataRecord(editingId, payload)
+            toast.success("Record updated successfully")
+            setEditingId(null)
+          } else {
+            await addDataRecord(payload)
+            toast.success("Record added successfully")
+          }
+          
+          setFormData({
+            date: new Date().toISOString().split("T")[0],
+            time: "12:00",
+            station: stations[0] || "",
+            value: "",
+            unit: "meters",
+          })
+          setShowAddForm(false)
+          fetchData()
+        } catch (error) {
+          console.error("Error saving record:", error)
+          toast.error("Failed to save record")
         }
-        setRecords([...records, newRecord])
-      }
-      setFormData({
-        date: new Date().toISOString().split("T")[0],
-        time: "12:00",
-        station: "Chiang Khong",
-        value: "",
-        unit: "meters",
       })
-      setShowAddForm(false)
+    } else {
+      toast.error("Please fill in all fields")
     }
   }
 
@@ -144,14 +114,31 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
 
   const handleDeleteRecord = (id: string) => {
     if (confirm("Are you sure you want to delete this data record?")) {
-      setRecords(records.filter((r) => r.id !== id))
+      startTransition(async () => {
+        try {
+          await deleteDataRecord(id)
+          toast.success("Record deleted")
+          fetchData()
+        } catch (error) {
+          console.error("Error deleting record:", error)
+          toast.error("Failed to delete record")
+        }
+      })
     }
   }
 
-  const handleVerifyRecord = (id: string) => {
-    setRecords(
-      records.map((r) => (r.id === id ? { ...r, status: r.status === "verified" ? "pending" : "verified" } : r)),
-    )
+  const handleVerifyRecord = (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "verified" ? "pending" : "verified"
+    startTransition(async () => {
+      try {
+        await verifyDataRecord(id, newStatus)
+        toast.success(`Record marked as ${newStatus}`)
+        fetchData()
+      } catch (error) {
+        console.error("Error verifying record:", error)
+        toast.error("Failed to update verification status")
+      }
+    })
   }
 
   return (
@@ -230,7 +217,7 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
                       setFormData({
                         date: new Date().toISOString().split("T")[0],
                         time: "12:00",
-                        station: "Chiang Khong",
+                        station: stations[0] || "",
                         value: "",
                         unit: "meters",
                       })
@@ -300,7 +287,7 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
                       </div>
                     </div>
                   </div>
-                  <Button onClick={handleAddRecord} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  <Button onClick={handleAddRecord} disabled={isPending} className="w-full bg-green-600 hover:bg-green-700 text-white disabled:opacity-50">
                     {editingId ? "Update Record" : "Add Record"}
                   </Button>
                 </CardContent>
@@ -316,72 +303,79 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-700">
-                        <th className="text-left py-3 px-4 font-medium text-slate-300">Date/Time</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-300">Station</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-300">Value</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-300">Source</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-300">Status</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-300">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {records.map((record) => (
-                        <tr key={record.id} className="border-b border-slate-700 hover:bg-slate-700/50">
-                          <td className="py-3 px-4 text-white font-medium">
-                            {record.date} {record.time}
-                          </td>
-                          <td className="py-3 px-4 text-slate-300">{record.station}</td>
-                          <td className="py-3 px-4 text-white font-mono">
-                            {record.value.toFixed(2)} {record.unit}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${
-                                record.source === "automated"
-                                  ? "bg-blue-900/30 text-blue-300"
-                                  : "bg-slate-700/50 text-slate-300"
-                              }`}
-                            >
-                              {record.source === "automated" ? "Auto" : "Manual"}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <button
-                              onClick={() => handleVerifyRecord(record.id)}
-                              className={`px-2 py-1 rounded text-xs font-medium cursor-pointer ${
-                                record.status === "verified"
-                                  ? "bg-green-900/30 text-green-300"
-                                  : "bg-orange-900/30 text-orange-300"
-                              }`}
-                            >
-                              {record.status === "verified" ? "Verified" : "Pending"}
-                            </button>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEditRecord(record)}
-                                className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-blue-400"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteRecord(record.id)}
-                                className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-red-400"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
+                {isLoading ? (
+                  <div className="text-white">Loading data...</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-700">
+                          <th className="text-left py-3 px-4 font-medium text-slate-300">Date/Time</th>
+                          <th className="text-left py-3 px-4 font-medium text-slate-300">Station</th>
+                          <th className="text-left py-3 px-4 font-medium text-slate-300">Value</th>
+                          <th className="text-left py-3 px-4 font-medium text-slate-300">Source</th>
+                          <th className="text-left py-3 px-4 font-medium text-slate-300">Status</th>
+                          <th className="text-left py-3 px-4 font-medium text-slate-300">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {records.map((record) => (
+                          <tr key={record.id} className="border-b border-slate-700 hover:bg-slate-700/50">
+                            <td className="py-3 px-4 text-white font-medium">
+                              {record.date} {record.time}
+                            </td>
+                            <td className="py-3 px-4 text-slate-300">{record.station}</td>
+                            <td className="py-3 px-4 text-white font-mono">
+                              {record.value.toFixed(2)} {record.unit}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  record.source === "automated"
+                                    ? "bg-blue-900/30 text-blue-300"
+                                    : "bg-slate-700/50 text-slate-300"
+                                }`}
+                              >
+                                {record.source === "automated" ? "Auto" : "Manual"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <button
+                                onClick={() => handleVerifyRecord(record.id, record.status)}
+                                disabled={isPending}
+                                className={`px-2 py-1 rounded text-xs font-medium cursor-pointer disabled:opacity-50 ${
+                                  record.status === "verified"
+                                    ? "bg-green-900/30 text-green-300"
+                                    : "bg-orange-900/30 text-orange-300"
+                                }`}
+                              >
+                                {record.status === "verified" ? "Verified" : "Pending"}
+                              </button>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEditRecord(record)}
+                                  disabled={isPending}
+                                  className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-blue-400 disabled:opacity-50"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteRecord(record.id)}
+                                  disabled={isPending}
+                                  className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-red-400 disabled:opacity-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

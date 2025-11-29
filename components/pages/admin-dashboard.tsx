@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
@@ -8,6 +9,8 @@ import { UsersTable } from "@/components/admin/users-table"
 import { DataSourcesTable } from "@/components/admin/data-sources-table"
 import { SystemHealthPanel } from "@/components/admin/system-health"
 import { Users, Database } from "lucide-react"
+import { getUsers } from "@/app/actions/user-actions"
+import { getDataRecords } from "@/app/actions/data-actions"
 
 interface AdminDashboardProps {
   onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
@@ -15,6 +18,14 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
+  const [userCount, setUserCount] = useState<number | null>(null)
+  const [dataCount, setDataCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    getUsers().then(users => setUserCount(users.length))
+    getDataRecords().then(records => setDataCount(records.length))
+  }, [])
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar currentPage="admin" role="admin" onNavigate={onNavigate} onLogout={onLogout} />
@@ -33,7 +44,9 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-white">User Management</CardTitle>
-                    <CardDescription className="text-slate-400 text-xs">12 active users</CardDescription>
+                    <CardDescription className="text-slate-400 text-xs">
+                      {userCount !== null ? `${userCount} users` : 'Loading...'}
+                    </CardDescription>
                   </div>
                   <Button onClick={() => onNavigate("users")} className="bg-blue-600 hover:bg-blue-700">
                     <Users className="w-4 h-4 mr-2" />
@@ -50,7 +63,9 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-white">Data Management</CardTitle>
-                    <CardDescription className="text-slate-400 text-xs">847 records synced</CardDescription>
+                    <CardDescription className="text-slate-400 text-xs">
+                      {dataCount !== null ? `${dataCount} records` : 'Loading...'}
+                    </CardDescription>
                   </div>
                   <Button onClick={() => onNavigate("data")} className="bg-blue-600 hover:bg-blue-700">
                     <Database className="w-4 h-4 mr-2" />

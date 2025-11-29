@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from "sonner"
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -33,12 +34,14 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
 
     if (password !== repeatPassword) {
       setError('Passwords do not match')
+      toast.error('Passwords do not match')
       setIsLoading(false)
       return
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Starting sign up with:", { email, role })
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -48,11 +51,20 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           },
         },
       })
+      console.log("Sign up result:", { data, error })
+      
       if (error) throw error
+      
+      toast.success("Sign up successful! Redirecting...")
+      console.log("Redirecting to success page...")
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      console.error("Sign up error:", error)
+      const msg = error instanceof Error ? error.message : 'An error occurred'
+      setError(msg)
+      toast.error(msg)
     } finally {
+      console.log("Sign up finished, resetting loading state")
       setIsLoading(false)
     }
   }
@@ -78,7 +90,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2" suppressHydrationWarning>
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                 </div>
@@ -90,7 +102,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2" suppressHydrationWarning>
                 <div className="flex items-center">
                   <Label htmlFor="repeat-password">Repeat Password</Label>
                 </div>

@@ -1,31 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
-import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/components/auth-provider"
+import { getUsers, updateUserStatus, User } from "@/app/actions/user-actions"
+import { toast } from "sonner"
 
 interface UserManagementPageProps {
   onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
 }
 
-interface User {
-  id: string
-  name: string
-  email: string
-  phone: string
-  role: "guest" | "expert" | "admin"
-  status: "active" | "pending" | "rejected"
-  createdAt: string
-}
-
 export function UserManagementPage({ onNavigate, onLogout }: UserManagementPageProps) {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+  const [isPending, startTransition] = useTransition()
   const { user: currentUser } = useAuth()
 
   useEffect(() => {
@@ -35,72 +26,36 @@ export function UserManagementPage({ onNavigate, onLogout }: UserManagementPageP
   const fetchUsers = async () => {
     try {
       setIsLoading(true)
-      // Join users with user_roles to get roles
-      const { data, error } = await supabase
-        .from('users')
-        .select(`
-          id,
-          email,
-          full_name,
-          status,
-          created_at,
-          user_roles (
-            role
-          )
-        `)
-      
-      if (error) throw error
-
-      if (data) {
-        const formattedUsers: User[] = data.map((u: any) => ({
-          id: u.id,
-          name: u.full_name || 'N/A',
-          email: u.email || 'N/A',
-          phone: 'N/A', // Phone not in DB yet
-          role: u.user_roles?.[0]?.role === 'data_scientist' ? 'expert' : u.user_roles?.[0]?.role || 'guest',
-          status: u.status || 'pending',
-          createdAt: u.created_at.split('T')[0]
-        }))
-        setUsers(formattedUsers)
-      }
+      const data = await getUsers()
+      setUsers(data)
     } catch (error) {
       console.error("Error fetching users:", error)
+      toast.error("Failed to fetch users")
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
-    try {
-      // Prevent self-deactivation
-      if (currentUser?.id === id) {
-        alert("You cannot deactivate your own account.")
-        return
+    // Prevent self-deactivation
+    if (currentUser?.id === id) {
+      toast.error("You cannot deactivate your own account.")
+      return
+    }
+
+    const targetStatus = currentStatus === 'active' ? 'rejected' : 'active'
+
+    startTransition(async () => {
+      try {
+        await updateUserStatus(id, targetStatus)
+        toast.success(`User status updated to ${targetStatus}`)
+        // Optimistic update or refetch
+        fetchUsers() 
+      } catch (error) {
+        console.error("Error updating status:", error)
+        toast.error("Failed to update user status")
       }
-
-      const targetStatus = currentStatus === 'active' ? 'rejected' : 'active'
-
-      const { error } = await supabase
-        .from('users')
-        .update({ status: targetStatus })
-        .eq('id', id)
-
-      if (error) throw error
-
-      fetchUsers()
-    } catch (error) {
-      console.error("Error updating status:", error)
-    }
-  }
-
-  const handleDeleteUser = async (id: string) => {
-    if (confirm("Are you sure you want to delete this user?")) {
-      // Deleting user from public.users might not delete from auth.users.
-      // Usually we delete from auth.users via server-side admin API.
-      // Client-side deletion of other users is restricted.
-      // For now, let's just update status to rejected or leave as is since we don't have Admin API setup here.
-      alert("Deleting users requires Admin API access. Please reject the user instead.")
-    }
+    })
   }
 
   return (
@@ -174,7 +129,8 @@ export function UserManagementPage({ onNavigate, onLogout }: UserManagementPageP
                                 {user.status === 'pending' && (
                                     <button
                                     onClick={() => handleToggleStatus(user.id, user.status)}
-                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                                    disabled={isPending}
+                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs disabled:opacity-50"
                                     >
                                     Approve
                                     </button>
@@ -182,11 +138,11 @@ export function UserManagementPage({ onNavigate, onLogout }: UserManagementPageP
                                 {user.status === 'active' && (
                                     <button
                                     onClick={() => handleToggleStatus(user.id, user.status)}
-                                    disabled={currentUser?.id === user.id}
+                                    disabled={currentUser?.id === user.id || isPending}
                                     className={`px-2 py-1 rounded text-xs text-white ${
                                       currentUser?.id === user.id 
                                         ? "bg-slate-600 cursor-not-allowed opacity-50" 
-                                        : "bg-red-600 hover:bg-red-700"
+                                        : "bg-red-600 hover:bg-red-700 disabled:opacity-50"
                                     }`}
                                     >
                                     Deactivate
@@ -195,7 +151,8 @@ export function UserManagementPage({ onNavigate, onLogout }: UserManagementPageP
                                 {user.status === 'rejected' && (
                                     <button
                                     onClick={() => handleToggleStatus(user.id, user.status)}
-                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                                    disabled={isPending}
+                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs disabled:opacity-50"
                                     >
                                     Re-activate
                                     </button>
@@ -216,3 +173,4 @@ export function UserManagementPage({ onNavigate, onLogout }: UserManagementPageP
     </div>
   )
 }
+

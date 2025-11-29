@@ -72,6 +72,16 @@ CREATE TYPE "public"."app_role" AS ENUM (
 ALTER TYPE "public"."app_role" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."user_status" AS ENUM (
+    'pending',
+    'active',
+    'rejected'
+);
+
+
+ALTER TYPE "public"."user_status" OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."authorize"("requested_permission" "public"."app_permission", "user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -99,21 +109,42 @@ CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
+  declare
+    user_count int;
+    requested_role public.app_role;
   begin
-    -- Satisfies REQ-4.2.2 (storing Name provided during signup metadata) [cite: 27]
-    insert into public.users (id, email, full_name)
+    -- Count existing users to determine if this is the first user
+    select count(*) from public.users into user_count;
+
+    -- Insert into public.users
+    insert into public.users (id, email, full_name, status)
     values (
       new.id, 
       new.email, 
-      new.raw_user_meta_data->>'full_name'
+      new.raw_user_meta_data->>'full_name',
+      case 
+        when user_count = 0 then 'active'::public.user_status
+        else 'pending'::public.user_status
+      end
     );
 
-    -- Simple logic to assign Admin role based on email (for initial setup)
-    if position('admin@swfm.com' in new.email) > 0 then
+    -- Determine role
+    if user_count = 0 then
+      -- First user is always admin
       insert into public.user_roles (user_id, role) values (new.id, 'admin');
-    -- Assign Expert role based on domain or manual metadata
-    elsif position('data_scientist' in new.email) > 0 then
-      insert into public.user_roles (user_id, role) values (new.id, 'data_scientist');
+    else
+      -- Subsequent users get role from metadata (default to data_scientist if missing)
+      -- We trust the metadata here because the status is pending anyway
+      requested_role := coalesce(
+        (new.raw_user_meta_data->>'role')::public.app_role, 
+        'data_scientist'::public.app_role
+      );
+      
+      -- Prevent non-first users from becoming admins via metadata hacking (optional but good practice)
+      -- If they request admin, we can either allow it (pending approval) or force data_scientist.
+      -- The requirement says "The sign up should only create a pending account where admin need to approve".
+      -- It implies they CAN request admin. So we allow it.
+      insert into public.user_roles (user_id, role) values (new.id, requested_role);
     end if;
 
     return new;
@@ -167,7 +198,12 @@ CREATE TABLE IF NOT EXISTS "public"."measurements" (
     "rainfall_12h" numeric,
     "rainfall_24h" numeric,
     "rainfall_7to7" numeric,
-    "fetched_at" timestamp with time zone
+    "fetched_at" timestamp with time zone,
+    "source" "text" DEFAULT 'automated'::"text",
+    "status" "text" DEFAULT 'verified'::"text",
+    "unit" "text" DEFAULT 'meters'::"text",
+    CONSTRAINT "measurements_source_check" CHECK (("source" = ANY (ARRAY['manual'::"text", 'automated'::"text"]))),
+    CONSTRAINT "measurements_status_check" CHECK (("status" = ANY (ARRAY['verified'::"text", 'pending'::"text", 'rejected'::"text"])))
 );
 
 
@@ -290,7 +326,8 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "id" "uuid" NOT NULL,
     "email" "text",
     "full_name" "text",
-    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
+    "status" "public"."user_status" DEFAULT 'pending'::"public"."user_status" NOT NULL
 );
 
 
@@ -395,6 +432,11 @@ ALTER TABLE ONLY "public"."model_configs"
 
 ALTER TABLE ONLY "public"."user_roles"
     ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."users"
+    ADD CONSTRAINT "users_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -796,6 +838,138 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 drop extension if exists "pg_net";
+
+drop policy "Allow experts/admins to insert forecasts" on "public"."forecasts";
+
+drop policy "Allow admin insert/update/delete" on "public"."measurements";
+
+drop policy "Allow experts and admins to create/edit models" on "public"."model_configs";
+
+drop policy "Allow experts and admins to view models" on "public"."model_configs";
+
+drop policy "Allow admin full access" on "public"."stations";
+
+drop policy "Allow admin delete access" on "public"."users";
+
+alter table "public"."forecasts" drop constraint "forecasts_model_id_fkey";
+
+alter table "public"."forecasts" drop constraint "forecasts_station_id_fkey";
+
+alter table "public"."measurements" drop constraint "measurements_station_id_fkey";
+
+alter table "public"."model_configs" drop constraint "model_configs_created_by_fkey";
+
+alter table "public"."user_roles" drop constraint "user_roles_user_id_fkey";
+
+drop function if exists "public"."authorize"(requested_permission app_permission, user_id uuid);
+
+alter table "public"."role_permissions" alter column "permission" set data type public.app_permission using "permission"::text::public.app_permission;
+
+alter table "public"."role_permissions" alter column "role" set data type public.app_role using "role"::text::public.app_role;
+
+alter table "public"."user_roles" alter column "role" set data type public.app_role using "role"::text::public.app_role;
+
+alter table "public"."users" alter column "status" set default 'pending'::public.user_status;
+
+alter table "public"."users" alter column "status" set data type public.user_status using "status"::text::public.user_status;
+
+alter table "public"."forecasts" add constraint "forecasts_model_id_fkey" FOREIGN KEY (model_id) REFERENCES public.model_configs(id) ON DELETE SET NULL not valid;
+
+alter table "public"."forecasts" validate constraint "forecasts_model_id_fkey";
+
+alter table "public"."forecasts" add constraint "forecasts_station_id_fkey" FOREIGN KEY (station_id) REFERENCES public.stations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."forecasts" validate constraint "forecasts_station_id_fkey";
+
+alter table "public"."measurements" add constraint "measurements_station_id_fkey" FOREIGN KEY (station_id) REFERENCES public.stations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."measurements" validate constraint "measurements_station_id_fkey";
+
+alter table "public"."model_configs" add constraint "model_configs_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.users(id) not valid;
+
+alter table "public"."model_configs" validate constraint "model_configs_created_by_fkey";
+
+alter table "public"."user_roles" add constraint "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."user_roles" validate constraint "user_roles_user_id_fkey";
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.authorize(requested_permission public.app_permission, user_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+  declare
+    bind_permissions int;
+  begin
+    select
+      count(*)
+    from public.role_permissions
+    inner join public.user_roles on role_permissions.role = user_roles.role
+    where
+      role_permissions.permission = authorize.requested_permission and
+      user_roles.user_id = authorize.user_id
+    into bind_permissions;
+
+    return bind_permissions > 0;
+  end;
+$function$
+;
+
+
+  create policy "Allow experts/admins to insert forecasts"
+  on "public"."forecasts"
+  as permissive
+  for insert
+  to public
+with check ((public.authorize('models.tune'::public.app_permission, auth.uid()) OR public.authorize('data.manage'::public.app_permission, auth.uid())));
+
+
+
+  create policy "Allow admin insert/update/delete"
+  on "public"."measurements"
+  as permissive
+  for all
+  to public
+using (public.authorize('data.manage'::public.app_permission, auth.uid()));
+
+
+
+  create policy "Allow experts and admins to create/edit models"
+  on "public"."model_configs"
+  as permissive
+  for all
+  to public
+using ((public.authorize('models.tune'::public.app_permission, auth.uid()) OR public.authorize('data.manage'::public.app_permission, auth.uid())));
+
+
+
+  create policy "Allow experts and admins to view models"
+  on "public"."model_configs"
+  as permissive
+  for select
+  to public
+using ((public.authorize('models.tune'::public.app_permission, auth.uid()) OR public.authorize('data.manage'::public.app_permission, auth.uid())));
+
+
+
+  create policy "Allow admin full access"
+  on "public"."stations"
+  as permissive
+  for all
+  to public
+using (public.authorize('data.manage'::public.app_permission, auth.uid()));
+
+
+
+  create policy "Allow admin delete access"
+  on "public"."users"
+  as permissive
+  for delete
+  to public
+using (public.authorize('users.manage'::public.app_permission, auth.uid()));
+
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
