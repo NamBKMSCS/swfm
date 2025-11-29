@@ -1,30 +1,48 @@
 # SWFM
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+## Development Process
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/roadtodev101s-projects/v0-swfm)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/AphfESfSm6d)
+1. Clone this repository
 
-## Overview
+```bash
+git clone https://github.com/LGTM-but-NY/swfm.git
+```
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+2. Install dependencies
 
-## Deployment
+```bash
+pnpm install
+```
 
-Your project is live at:
+3. Run supabase services
 
-**[https://vercel.com/roadtodev101s-projects/v0-swfm](https://vercel.com/roadtodev101s-projects/v0-swfm)**
+```bash
+pnpm supabase start
+```
 
-## Build your app
+4. Copy the `.env.example` file to `.env` and fill in the values
+ 
+```bash
+cp .env.example .env
+```
 
-Continue building your app on:
+5. Run the development server
 
-**[https://v0.app/chat/AphfESfSm6d](https://v0.app/chat/AphfESfSm6d)**
+```bash
+pnpm run dev
+```
 
-## How It Works
+### Database Schema Updates
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+If you make changes to the Supabase database schema (e.g., adding tables, columns, or enums), you must regenerate the TypeScript types to ensure type safety in the application.
+
+Run the following command:
+
+```bash
+pnpm db:gen-types
+```
+
+This command will:
+1.  Generate TypeScript definitions from your local Supabase instance.
+2.  Enhance them using `better-supabase-types` for improved developer experience.
+3.  Update `lib/supabase/schema.ts`.

@@ -19,6 +19,7 @@ import { useState } from 'react'
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [selectedRole, setSelectedRole] = useState<"expert" | "admin">("expert")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -30,13 +31,54 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      if (error) throw error
+      if (signInError) throw signInError
+
+      if (!user) throw new Error("Login failed")
+
+      // Check user status
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('status')
+        .eq('id', user.id)
+        .single()
+
+      if (userError) throw userError
+
+      if (userData.status === 'pending') {
+        await supabase.auth.signOut()
+        throw new Error("Account is pending approval. Please contact an administrator.")
+      }
+
+      if (userData.status === 'rejected') {
+        await supabase.auth.signOut()
+        throw new Error("Account has been rejected.")
+      }
+
+      // Check user role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      if (roleError) throw roleError
+
+      // Validate selected role against actual role
+      // UI "expert" maps to DB "data_scientist"
+      const dbRole = roleData.role
+      const expectedDbRole = selectedRole === "expert" ? "data_scientist" : "admin"
+
+      if (dbRole !== expectedDbRole) {
+        await supabase.auth.signOut()
+        throw new Error(`Invalid role selected. You are not an ${selectedRole}.`)
+      }
+
       // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push('/protected')
+      router.push('/')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -83,6 +125,35 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+
+              <div className="grid gap-2">
+                <Label>Login as</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="expert"
+                      checked={selectedRole === "expert"}
+                      onChange={(e) => setSelectedRole(e.target.value as any)}
+                      className="accent-blue-600"
+                    />
+                    Expert
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="admin"
+                      checked={selectedRole === "admin"}
+                      onChange={(e) => setSelectedRole(e.target.value as any)}
+                      className="accent-blue-600"
+                    />
+                    Admin
+                  </label>
+                </div>
+              </div>
+
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Login'}

@@ -8,9 +8,10 @@ interface SidebarProps {
   role: "guest" | "expert" | "admin"
   onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
+  onLogin?: () => void
 }
 
-export function Sidebar({ currentPage, role, onNavigate, onLogout }: SidebarProps) {
+export function Sidebar({ currentPage, role, onNavigate, onLogout, onLogin }: SidebarProps) {
   const menuItems = [
     { id: "guest", label: "Dashboard", icon: LayoutDashboard, roles: ["guest", "expert", "admin"] },
     { id: "map", label: "Map", icon: Map, roles: ["guest", "expert", "admin"] },
@@ -67,14 +68,24 @@ export function Sidebar({ currentPage, role, onNavigate, onLogout }: SidebarProp
           <p className="text-xs font-semibold text-slate-300">Role</p>
           <p className="text-sm text-blue-400 font-medium capitalize">{role}</p>
         </div>
-        <Button
-          onClick={onLogout}
-          variant="outline"
-          className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 bg-transparent"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
+        {role === "guest" ? (
+          <Button
+            onClick={onLogin}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <LogOut className="w-4 h-4 mr-2 rotate-180" />
+            Login
+          </Button>
+        ) : (
+          <Button
+            onClick={onLogout}
+            variant="outline"
+            className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 bg-transparent"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
+        )}
       </div>
     </div>
   )

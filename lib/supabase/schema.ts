@@ -7,10 +7,30 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -251,18 +271,21 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           id: string;
+          status: Database["public"]["Enums"]["user_status"];
         };
         Insert: {
           created_at?: string;
           email?: string | null;
           full_name?: string | null;
           id: string;
+          status?: Database["public"]["Enums"]["user_status"];
         };
         Update: {
           created_at?: string;
           email?: string | null;
           full_name?: string | null;
           id?: string;
+          status?: Database["public"]["Enums"]["user_status"];
         };
         Relationships: [];
       };
@@ -286,6 +309,7 @@ export type Database = {
         | "models.tune"
         | "data.download";
       app_role: "admin" | "data_scientist";
+      user_status: "pending" | "active" | "rejected";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -414,6 +438,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_permission: [
@@ -423,11 +450,18 @@ export const Constants = {
         "data.download",
       ],
       app_role: ["admin", "data_scientist"],
+      user_status: ["pending", "active", "rejected"],
     },
   },
 } as const;
 
-// Schema: __InternalSupabase
+// Schema: graphql_public
+// Functions
+export type ArgsGraphql =
+  Database["graphql_public"]["Functions"]["graphql"]["Args"];
+export type ReturnTypeGraphql =
+  Database["graphql_public"]["Functions"]["graphql"]["Returns"];
+
 // Schema: public
 // Enums
 export enum AppPermission {
@@ -440,6 +474,12 @@ export enum AppPermission {
 export enum AppRole {
   admin = "admin",
   data_scientist = "data_scientist",
+}
+
+export enum UserStatus {
+  pending = "pending",
+  active = "active",
+  rejected = "rejected",
 }
 
 // Tables

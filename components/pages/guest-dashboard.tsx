@@ -13,9 +13,10 @@ interface GuestDashboardProps {
   role: "guest" | "expert" | "admin"
   onNavigate: (page: "guest" | "expert" | "evaluation" | "admin" | "tune" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
+  onLogin: () => void
 }
 
-export function GuestDashboard({ role, onNavigate, onLogout }: GuestDashboardProps) {
+export function GuestDashboard({ role, onNavigate, onLogout, onLogin }: GuestDashboardProps) {
   const [selectedStation, setSelectedStation] = useState("Vientiane")
   const [lastUpdate, setLastUpdate] = useState(new Date())
 
@@ -31,7 +32,7 @@ export function GuestDashboard({ role, onNavigate, onLogout }: GuestDashboardPro
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar currentPage="guest" role={role} onNavigate={onNavigate} onLogout={onLogout} />
+      <Sidebar currentPage="guest" role={role} onNavigate={onNavigate} onLogout={onLogout} onLogin={onLogin} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header title="Water Forecast Dashboard" role={role} />

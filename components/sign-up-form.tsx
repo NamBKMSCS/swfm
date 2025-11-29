@@ -20,6 +20,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
+  const [role, setRole] = useState<"data_scientist" | "admin">("data_scientist")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -41,7 +42,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/auth/sign-up-success`,
+          data: {
+            role: role,
+          },
         },
       })
       if (error) throw error
@@ -97,6 +101,34 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label>Role</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="data_scientist"
+                      checked={role === "data_scientist"}
+                      onChange={(e) => setRole(e.target.value as any)}
+                      className="accent-blue-600"
+                    />
+                    Expert
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="admin"
+                      checked={role === "admin"}
+                      onChange={(e) => setRole(e.target.value as any)}
+                      className="accent-blue-600"
+                    />
+                    Admin
+                  </label>
+                </div>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
