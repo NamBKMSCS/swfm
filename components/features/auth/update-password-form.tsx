@@ -12,6 +12,12 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Field,
+  FieldLabel,
+  FieldError,
+  FieldGroup,
+} from '@/components/ui/field'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -48,9 +54,9 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
         </CardHeader>
         <CardContent>
           <form onSubmit={handleForgotPassword}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="password">New password</Label>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="password">New password</FieldLabel>
                 <Input
                   id="password"
                   type="password"
@@ -59,12 +65,12 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              </Field>
+              <FieldError>{error}</FieldError>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save new password'}
               </Button>
-            </div>
+            </FieldGroup>
           </form>
         </CardContent>
       </Card>

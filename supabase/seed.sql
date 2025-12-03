@@ -13,8 +13,7 @@ INSERT INTO
         "flood_level",
         "is_deleted"
     )
-VALUES
-    (
+VALUES (
         '1',
         '092600',
         'Jinghong',
@@ -140,3 +139,28 @@ VALUES
         '4',
         'false'
     );
+
+-- Seed role_permissions table with the default role-to-permission mappings
+-- This is critical for RLS policies to work correctly
+
+-- Admin role permissions (all permissions)
+INSERT INTO
+    "public"."role_permissions" ("role", "permission")
+VALUES ('admin', 'users.manage'),
+    ('admin', 'data.manage'),
+    ('admin', 'models.tune'),
+    ('admin', 'data.download')
+ON CONFLICT ("role", "permission") DO NOTHING;
+
+-- Data Scientist role permissions (limited permissions)
+INSERT INTO
+    "public"."role_permissions" ("role", "permission")
+VALUES (
+        'data_scientist',
+        'models.tune'
+    ),
+    (
+        'data_scientist',
+        'data.download'
+    )
+ON CONFLICT ("role", "permission") DO NOTHING;

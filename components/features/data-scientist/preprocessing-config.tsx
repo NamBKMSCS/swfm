@@ -4,6 +4,20 @@ import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Field,
+  FieldLabel,
+  FieldGroup,
+  FieldSet,
+  FieldTitle,
+} from "@/components/ui/field"
 import { Settings, AlertCircle, CheckCircle2, ChevronDown, Loader2, Save, Play, Settings2 } from "lucide-react"
 import { getPreprocessingConfigs, savePreprocessingConfig, runPreprocessing, PreprocessingConfig } from "@/app/actions/preprocessing-actions"
 import { toast } from "sonner"
@@ -224,7 +238,7 @@ export function PreprocessingConfigPage() {
 
         {/* Info Banner */}
         <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-300">Configuration Impact</p>
             <p className="text-xs text-slate-400 mt-1">
@@ -242,22 +256,25 @@ export function PreprocessingConfigPage() {
                 onClick={() => setExpandedMethod(expandedMethod === method.id ? null : method.id)}
                 className="cursor-pointer p-4 flex items-center justify-between hover:bg-slate-700/50 transition"
               >
-                <div className="flex items-center gap-4 flex-1">
+                <Field orientation="horizontal" className="flex-1">
                   <div
                     onClick={(e) => {
                       e.stopPropagation()
                     }}
                   >
                     <Switch 
+                      id={`switch-${method.id}`}
                       checked={method.enabled} 
                       onCheckedChange={() => handleToggleMethod(method.id)} 
                     />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-white">{method.name}</h3>
+                    <FieldLabel htmlFor={`switch-${method.id}`} className="text-sm font-semibold text-white cursor-pointer">
+                      {method.name}
+                    </FieldLabel>
                     <p className="text-xs text-slate-400 mt-1">{method.description}</p>
                   </div>
-                </div>
+                </Field>
                 <ChevronDown
                   className={`w-5 h-5 text-slate-400 transition ${
                     expandedMethod === method.id ? "rotate-180" : ""
@@ -267,113 +284,119 @@ export function PreprocessingConfigPage() {
 
               {/* Expanded Parameters */}
               {expandedMethod === method.id && (
-                <div className="border-t border-slate-700 p-4 space-y-4">
-                  {Object.entries(method.parameters).map(([key, param]) => (
-                    <div key={key}>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-medium text-slate-300">{param.label}</label>
-                        {typeof param.value === "number" && (
-                          <span className="text-xs font-mono text-slate-400">{param.value}</span>
-                        )}
-                      </div>
-
-                      {typeof param.value === "number" ? (
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="range"
-                            min={param.min || 0}
-                            max={param.max || 100}
-                            step={param.step || 1}
-                            value={param.value}
-                            onChange={(e) =>
-                              handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
-                            }
-                            className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                          />
-                          <input
-                            type="number"
-                            min={param.min || 0}
-                            max={param.max || 100}
-                            step={param.step || 1}
-                            value={param.value}
-                            onChange={(e) =>
-                              handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
-                            }
-                            className="w-16 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-xs"
-                          />
+                <div className="border-t border-slate-700 p-4">
+                  <FieldGroup>
+                    {Object.entries(method.parameters).map(([key, param]) => (
+                      <Field key={key}>
+                        <div className="flex items-center justify-between mb-2">
+                          <FieldLabel className="text-xs font-medium text-slate-300">{param.label}</FieldLabel>
+                          {typeof param.value === "number" && (
+                            <span className="text-xs font-mono text-slate-400">{param.value}</span>
+                          )}
                         </div>
-                      ) : (
-                        <select
-                          value={param.value}
-                          onChange={(e) => handleParameterChange(method.id, key, e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                        >
-                          {key === "method" && method.id === "outlier" && (
-                            <>
-                              <option value="iqr">Interquartile Range (IQR)</option>
-                              <option value="zscore">Z-Score</option>
-                              <option value="mad">Median Absolute Deviation</option>
-                            </>
-                          )}
-                          {key === "action" && method.id === "outlier" && (
-                            <>
-                              <option value="interpolate">Interpolate</option>
-                              <option value="remove">Remove</option>
-                              <option value="flag">Flag Only</option>
-                            </>
-                          )}
-                          {key === "method" && method.id === "missing" && (
-                            <>
-                              <option value="linear-interpolation">Linear Interpolation</option>
-                              <option value="forward-fill">Forward Fill</option>
-                              <option value="mean">Mean Value</option>
-                              <option value="remove">Remove Records</option>
-                            </>
-                          )}
-                          {key === "method" && method.id === "smoothing" && (
-                            <>
-                              <option value="moving-average">Moving Average</option>
-                              <option value="exponential">Exponential Smoothing</option>
-                              <option value="gaussian">Gaussian Kernel</option>
-                            </>
-                          )}
-                          {key === "method" && method.id === "normalization" && (
-                            <>
-                              <option value="z-score">Z-Score Normalization</option>
-                              <option value="min-max">Min-Max Scaling</option>
-                              <option value="robust">Robust Scaling</option>
-                            </>
-                          )}
-                          {key === "referenceStation" && (
-                            <>
-                              <option value="Jinghong">Jinghong</option>
-                              <option value="Chiang Saen">Chiang Saen</option>
-                              <option value="Luang Prabang">Luang Prabang</option>
-                              <option value="Vientiane">Vientiane</option>
-                              <option value="Pakse">Pakse</option>
-                              <option value="Stung Treng">Stung Treng</option>
-                              <option value="Kratie">Kratie</option>
-                              <option value="Tan Chau">Tan Chau</option>
-                              <option value="Châu Đốc">Châu Đốc</option>
-                            </>
-                          )}
-                          {key === "timezone" && (
-                            <>
-                              <option value="UTC+7">UTC+7 (Bangkok)</option>
-                              <option value="UTC+6">UTC+6 (Bangkok)</option>
-                              <option value="UTC">UTC</option>
-                            </>
-                          )}
-                          {key === "format" && (
-                            <>
-                              <option value="ISO8601">ISO 8601</option>
-                              <option value="Unix">Unix Timestamp</option>
-                            </>
-                          )}
-                        </select>
-                      )}
-                    </div>
-                  ))}
+
+                        {typeof param.value === "number" ? (
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="range"
+                              min={param.min || 0}
+                              max={param.max || 100}
+                              step={param.step || 1}
+                              value={param.value}
+                              onChange={(e) =>
+                                handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
+                              }
+                              className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <input
+                              type="number"
+                              min={param.min || 0}
+                              max={param.max || 100}
+                              step={param.step || 1}
+                              value={param.value}
+                              onChange={(e) =>
+                                handleParameterChange(method.id, key, Number.parseFloat(e.target.value))
+                              }
+                              className="w-16 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-xs"
+                            />
+                          </div>
+                        ) : (
+                          <Select
+                            value={param.value}
+                            onValueChange={(value) => handleParameterChange(method.id, key, value)}
+                          >
+                            <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {key === "method" && method.id === "outlier" && (
+                                <>
+                                  <SelectItem value="iqr">Interquartile Range (IQR)</SelectItem>
+                                  <SelectItem value="zscore">Z-Score</SelectItem>
+                                  <SelectItem value="mad">Median Absolute Deviation</SelectItem>
+                                </>
+                              )}
+                              {key === "action" && method.id === "outlier" && (
+                                <>
+                                  <SelectItem value="interpolate">Interpolate</SelectItem>
+                                  <SelectItem value="remove">Remove</SelectItem>
+                                  <SelectItem value="flag">Flag Only</SelectItem>
+                                </>
+                              )}
+                              {key === "method" && method.id === "missing" && (
+                                <>
+                                  <SelectItem value="linear-interpolation">Linear Interpolation</SelectItem>
+                                  <SelectItem value="forward-fill">Forward Fill</SelectItem>
+                                  <SelectItem value="mean">Mean Value</SelectItem>
+                                  <SelectItem value="remove">Remove Records</SelectItem>
+                                </>
+                              )}
+                              {key === "method" && method.id === "smoothing" && (
+                                <>
+                                  <SelectItem value="moving-average">Moving Average</SelectItem>
+                                  <SelectItem value="exponential">Exponential Smoothing</SelectItem>
+                                  <SelectItem value="gaussian">Gaussian Kernel</SelectItem>
+                                </>
+                              )}
+                              {key === "method" && method.id === "normalization" && (
+                                <>
+                                  <SelectItem value="z-score">Z-Score Normalization</SelectItem>
+                                  <SelectItem value="min-max">Min-Max Scaling</SelectItem>
+                                  <SelectItem value="robust">Robust Scaling</SelectItem>
+                                </>
+                              )}
+                              {key === "referenceStation" && (
+                                <>
+                                  <SelectItem value="Jinghong">Jinghong</SelectItem>
+                                  <SelectItem value="Chiang Saen">Chiang Saen</SelectItem>
+                                  <SelectItem value="Luang Prabang">Luang Prabang</SelectItem>
+                                  <SelectItem value="Vientiane">Vientiane</SelectItem>
+                                  <SelectItem value="Pakse">Pakse</SelectItem>
+                                  <SelectItem value="Stung Treng">Stung Treng</SelectItem>
+                                  <SelectItem value="Kratie">Kratie</SelectItem>
+                                  <SelectItem value="Tan Chau">Tan Chau</SelectItem>
+                                  <SelectItem value="Châu Đốc">Châu Đốc</SelectItem>
+                                </>
+                              )}
+                              {key === "timezone" && (
+                                <>
+                                  <SelectItem value="UTC+7">UTC+7 (Bangkok)</SelectItem>
+                                  <SelectItem value="UTC+6">UTC+6 (Bangkok)</SelectItem>
+                                  <SelectItem value="UTC">UTC</SelectItem>
+                                </>
+                              )}
+                              {key === "format" && (
+                                <>
+                                  <SelectItem value="ISO8601">ISO 8601</SelectItem>
+                                  <SelectItem value="Unix">Unix Timestamp</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </Field>
+                    ))}
+                  </FieldGroup>
                 </div>
               )}
             </Card>

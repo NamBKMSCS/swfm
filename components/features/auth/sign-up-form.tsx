@@ -12,9 +12,17 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Field,
+  FieldLabel,
+  FieldError,
+  FieldGroup,
+  FieldDescription,
+} from '@/components/ui/field'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from "sonner"
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -24,7 +32,23 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const [role, setRole] = useState<"data_scientist" | "admin">("data_scientist")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFirstUser, setIsFirstUser] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const checkFirstUser = async () => {
+      const supabase = createClient()
+      const { count } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+
+      if (count === 0) {
+        setIsFirstUser(true)
+        setRole('admin')
+      }
+    }
+    checkFirstUser()
+  }, [])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,9 +76,9 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         },
       })
       console.log("Sign up result:", { data, error })
-      
+
       if (error) throw error
-      
+
       toast.success("Sign up successful! Redirecting...")
       console.log("Redirecting to success page...")
       router.push('/auth/sign-up-success')
@@ -78,9 +102,9 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -89,11 +113,9 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-              </div>
-              <div className="grid gap-2" suppressHydrationWarning>
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
+              </Field>
+              <Field suppressHydrationWarning>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
                 <Input
                   id="password"
                   type="password"
@@ -101,11 +123,9 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-              </div>
-              <div className="grid gap-2" suppressHydrationWarning>
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
-                </div>
+              </Field>
+              <Field suppressHydrationWarning>
+                <FieldLabel htmlFor="repeat-password">Repeat Password</FieldLabel>
                 <Input
                   id="repeat-password"
                   type="password"
@@ -113,40 +133,41 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label>Role</Label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="data_scientist"
-                      checked={role === "data_scientist"}
-                      onChange={(e) => setRole(e.target.value as any)}
-                      className="accent-blue-600"
-                    />
-                    Expert
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="admin"
-                      checked={role === "admin"}
-                      onChange={(e) => setRole(e.target.value as any)}
-                      className="accent-blue-600"
-                    />
-                    Admin
-                  </label>
+              </Field>
+
+              {!isFirstUser && (
+                <Field>
+                  <FieldLabel>Role</FieldLabel>
+                  <RadioGroup
+                    value={role}
+                    onValueChange={(value) => setRole(value as "data_scientist" | "admin")}
+                    className="grid grid-cols-2 gap-4"
+                  >
+                    <FieldLabel htmlFor="role-expert" className="cursor-pointer">
+                      <Field className="border rounded-lg p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5">
+                        <RadioGroupItem value="data_scientist" id="role-expert" className="sr-only" />
+                        <div className="text-sm font-medium">Expert</div>
+                      </Field>
+                    </FieldLabel>
+                    <FieldLabel htmlFor="role-admin" className="cursor-pointer">
+                      <Field className="border rounded-lg p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5">
+                        <RadioGroupItem value="admin" id="role-admin" className="sr-only" />
+                        <div className="text-sm font-medium">Admin</div>
+                      </Field>
+                    </FieldLabel>
+                  </RadioGroup>
+                </Field>
+              )}
+              {isFirstUser && (
+                <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-800">
+                  You will be registered as the first admin user.
                 </div>
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              )}
+              <FieldError>{error}</FieldError>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating an account...' : 'Sign up'}
               </Button>
-            </div>
+            </FieldGroup>
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}
               <Link href="/auth/login" className="underline underline-offset-4">

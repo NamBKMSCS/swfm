@@ -5,6 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Field,
+  FieldLabel,
+  FieldGroup,
+} from "@/components/ui/field"
 import { Search, Plus, Upload, Download, Filter, Trash2, Edit2, CheckCircle2, AlertCircle, Calendar as CalendarIcon, RefreshCw, Settings } from "lucide-react"
 import { getDataRecords, addDataRecord, updateDataRecord, deleteDataRecord, verifyDataRecord, getStations, DataRecord } from "@/app/actions/data-actions"
 import { toast } from "sonner"
@@ -180,7 +192,7 @@ export function DataManagementPage() {
 
           {/* Auto-sync Info */}
           <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-blue-300">Automated Data Synchronization</p>
               <p className="text-xs text-slate-400 mt-1">
@@ -221,9 +233,9 @@ export function DataManagementPage() {
             </CardHeader>
             {showAddForm && (
               <CardContent>
-                <div className="grid grid-cols-5 gap-4 items-end">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-400">Date</Label>
+                <FieldGroup className="grid grid-cols-5 gap-4 items-end">
+                  <Field>
+                    <FieldLabel className="text-xs text-slate-400">Date</FieldLabel>
                     <div className="relative">
                       <CalendarIcon className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
                       <Input
@@ -233,33 +245,36 @@ export function DataManagementPage() {
                         className="pl-8 bg-slate-900 border-slate-700 text-white"
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-400">Time</Label>
+                  </Field>
+                  <Field>
+                    <FieldLabel className="text-xs text-slate-400">Time</FieldLabel>
                     <Input
                       type="time"
                       value={formData.time}
                       onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                       className="bg-slate-900 border-slate-700 text-white"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-400">Station</Label>
-                    <select
+                  </Field>
+                  <Field>
+                    <FieldLabel className="text-xs text-slate-400">Station</FieldLabel>
+                    <Select
                       value={formData.station}
-                      onChange={(e) => setFormData({ ...formData, station: e.target.value })}
-                      className="w-full h-10 px-3 rounded-md bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      onValueChange={(value) => setFormData({ ...formData, station: value })}
                     >
-                      <option value="" disabled>Select Station</option>
-                      {stations.map((station) => (
-                        <option key={station} value={station}>
-                          {station}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-400">Water Level (m)</Label>
+                      <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                        <SelectValue placeholder="Select Station" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {stations.map((station) => (
+                          <SelectItem key={station} value={station}>
+                            {station}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel className="text-xs text-slate-400">Water Level (m)</FieldLabel>
                     <Input
                       type="number"
                       step="0.01"
@@ -268,7 +283,7 @@ export function DataManagementPage() {
                       onChange={(e) => setFormData({ ...formData, value: e.target.value })}
                       className="bg-slate-900 border-slate-700 text-white"
                     />
-                  </div>
+                  </Field>
                   <Button 
                     onClick={handleAddRecord} 
                     className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -277,7 +292,7 @@ export function DataManagementPage() {
                     {isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
                     {editingId ? "Update Record" : "Add Record"}
                   </Button>
-                </div>
+                </FieldGroup>
               </CardContent>
             )}
           </Card>

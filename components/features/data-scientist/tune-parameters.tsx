@@ -4,6 +4,12 @@ import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapView } from "@/components/dashboard/map-view"
+import {
+  Field,
+  FieldLabel,
+  FieldGroup,
+  FieldSeparator,
+} from "@/components/ui/field"
 import { AlertCircle, Save, RotateCcw, Loader2 } from "lucide-react"
 import { getModelConfig, saveModelConfig } from "@/app/actions/model-actions"
 import { toast } from "sonner"
@@ -99,7 +105,7 @@ export function TuneParametersPage({ role }: TuneParametersPageProps) {
         <div className="p-6 space-y-6">
           {/* Info Banner */}
           <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-blue-300">Parameter Tuning Guidelines</p>
               <p className="text-xs text-slate-400 mt-1">
@@ -155,156 +161,163 @@ export function TuneParametersPage({ role }: TuneParametersPageProps) {
                   <CardTitle className="text-white text-base">{config.label} Parameters</CardTitle>
                   <CardDescription className="text-slate-400 text-xs">Station: {selectedStation}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* ARIMA Parameters */}
-                  {visibleParams.includes("p") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">AR Order (p)</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="range"
-                          min="0"
-                          max="5"
-                          value={parameters.p}
-                          onChange={(e) => handleParameterChange("p", Number.parseInt(e.target.value))}
-                          className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
-                        />
-                        <span className="text-sm font-mono text-blue-400 w-8">{parameters.p}</span>
-                      </div>
-                    </div>
-                  )}
+                <CardContent>
+                  <FieldGroup>
+                    {/* ARIMA Parameters */}
+                    {visibleParams.includes("p") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">AR Order (p)</FieldLabel>
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="range"
+                            min="0"
+                            max="5"
+                            value={parameters.p}
+                            onChange={(e) => handleParameterChange("p", Number.parseInt(e.target.value))}
+                            className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
+                          />
+                          <span className="text-sm font-mono text-blue-400 w-8">{parameters.p}</span>
+                        </div>
+                      </Field>
+                    )}
 
-                  {visibleParams.includes("d") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Differencing (d)</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="range"
-                          min="0"
-                          max="3"
-                          value={parameters.d}
-                          onChange={(e) => handleParameterChange("d", Number.parseInt(e.target.value))}
-                          className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
-                        />
-                        <span className="text-sm font-mono text-blue-400 w-8">{parameters.d}</span>
-                      </div>
-                    </div>
-                  )}
+                    {visibleParams.includes("d") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">Differencing (d)</FieldLabel>
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="range"
+                            min="0"
+                            max="3"
+                            value={parameters.d}
+                            onChange={(e) => handleParameterChange("d", Number.parseInt(e.target.value))}
+                            className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
+                          />
+                          <span className="text-sm font-mono text-blue-400 w-8">{parameters.d}</span>
+                        </div>
+                      </Field>
+                    )}
 
-                  {visibleParams.includes("q") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">MA Order (q)</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="range"
-                          min="0"
-                          max="5"
-                          value={parameters.q}
-                          onChange={(e) => handleParameterChange("q", Number.parseInt(e.target.value))}
-                          className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
-                        />
-                        <span className="text-sm font-mono text-blue-400 w-8">{parameters.q}</span>
-                      </div>
-                    </div>
-                  )}
+                    {visibleParams.includes("q") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">MA Order (q)</FieldLabel>
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="range"
+                            min="0"
+                            max="5"
+                            value={parameters.q}
+                            onChange={(e) => handleParameterChange("q", Number.parseInt(e.target.value))}
+                            className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
+                          />
+                          <span className="text-sm font-mono text-blue-400 w-8">{parameters.q}</span>
+                        </div>
+                      </Field>
+                    )}
 
-                  {visibleParams.includes("seasonal") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Seasonal Component</label>
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => handleParameterChange("seasonal", !parameters.seasonal)}
-                          className={`flex-1 py-2 rounded text-xs font-medium transition-colors ${
-                            parameters.seasonal
-                              ? "bg-blue-600 text-white"
-                              : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                          }`}
-                        >
-                          {parameters.seasonal ? "Enabled" : "Disabled"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    {visibleParams.includes("seasonal") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">Seasonal Component</FieldLabel>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => handleParameterChange("seasonal", !parameters.seasonal)}
+                            className={`flex-1 py-2 rounded text-xs font-medium transition-colors ${
+                              parameters.seasonal
+                                ? "bg-blue-600 text-white"
+                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                            }`}
+                          >
+                            {parameters.seasonal ? "Enabled" : "Disabled"}
+                          </button>
+                        </div>
+                      </Field>
+                    )}
 
-                  {/* LSTM Parameters */}
-                  {visibleParams.includes("lookback") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Lookback Window</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="range"
-                          min="7"
-                          max="60"
-                          step="7"
-                          value={parameters.lookback}
-                          onChange={(e) => handleParameterChange("lookback", Number.parseInt(e.target.value))}
-                          className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
-                        />
-                        <span className="text-sm font-mono text-blue-400 w-12">{parameters.lookback}d</span>
-                      </div>
-                    </div>
-                  )}
+                    {/* Separator between ARIMA and LSTM params */}
+                    {visibleParams.some(p => ["p", "d", "q", "seasonal"].includes(p)) && 
+                     visibleParams.some(p => ["lookback", "learningRate", "epochs", "batchSize"].includes(p)) && (
+                      <FieldSeparator>Neural Network Parameters</FieldSeparator>
+                    )}
 
-                  {visibleParams.includes("learningRate") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Learning Rate</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="range"
-                          min="-4"
-                          max="-2"
-                          step="0.1"
-                          value={Math.log10(parameters.learningRate)}
-                          onChange={(e) =>
-                            handleParameterChange("learningRate", Math.pow(10, Number.parseFloat(e.target.value)))
-                          }
-                          className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
-                        />
-                        <span className="text-sm font-mono text-blue-400 w-12">
-                          {parameters.learningRate.toFixed(4)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    {/* LSTM Parameters */}
+                    {visibleParams.includes("lookback") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">Lookback Window</FieldLabel>
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="range"
+                            min="7"
+                            max="60"
+                            step="7"
+                            value={parameters.lookback}
+                            onChange={(e) => handleParameterChange("lookback", Number.parseInt(e.target.value))}
+                            className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
+                          />
+                          <span className="text-sm font-mono text-blue-400 w-12">{parameters.lookback}d</span>
+                        </div>
+                      </Field>
+                    )}
 
-                  {visibleParams.includes("epochs") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Training Epochs</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="range"
-                          min="50"
-                          max="500"
-                          step="50"
-                          value={parameters.epochs}
-                          onChange={(e) => handleParameterChange("epochs", Number.parseInt(e.target.value))}
-                          className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
-                        />
-                        <span className="text-sm font-mono text-blue-400 w-12">{parameters.epochs}</span>
-                      </div>
-                    </div>
-                  )}
+                    {visibleParams.includes("learningRate") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">Learning Rate</FieldLabel>
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="range"
+                            min="-4"
+                            max="-2"
+                            step="0.1"
+                            value={Math.log10(parameters.learningRate)}
+                            onChange={(e) =>
+                              handleParameterChange("learningRate", Math.pow(10, Number.parseFloat(e.target.value)))
+                            }
+                            className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
+                          />
+                          <span className="text-sm font-mono text-blue-400 w-12">
+                            {parameters.learningRate.toFixed(4)}
+                          </span>
+                        </div>
+                      </Field>
+                    )}
 
-                  {visibleParams.includes("batchSize") && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-300">Batch Size</label>
-                      <div className="flex gap-2 mt-1">
-                        <input
-                          type="range"
-                          min="8"
-                          max="64"
-                          step="8"
-                          value={parameters.batchSize}
-                          onChange={(e) => handleParameterChange("batchSize", Number.parseInt(e.target.value))}
-                          className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
-                        />
-                        <span className="text-sm font-mono text-blue-400 w-8">{parameters.batchSize}</span>
-                      </div>
-                    </div>
-                  )}
+                    {visibleParams.includes("epochs") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">Training Epochs</FieldLabel>
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="range"
+                            min="50"
+                            max="500"
+                            step="50"
+                            value={parameters.epochs}
+                            onChange={(e) => handleParameterChange("epochs", Number.parseInt(e.target.value))}
+                            className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
+                          />
+                          <span className="text-sm font-mono text-blue-400 w-12">{parameters.epochs}</span>
+                        </div>
+                      </Field>
+                    )}
 
-                  {/* Action Buttons */}
-                  <div className="pt-4 space-y-2 border-t border-slate-700">
+                    {visibleParams.includes("batchSize") && (
+                      <Field>
+                        <FieldLabel className="text-xs font-medium text-slate-300">Batch Size</FieldLabel>
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="range"
+                            min="8"
+                            max="64"
+                            step="8"
+                            value={parameters.batchSize}
+                            onChange={(e) => handleParameterChange("batchSize", Number.parseInt(e.target.value))}
+                            className="flex-1 h-2 bg-slate-700 rounded-lg accent-blue-500"
+                          />
+                          <span className="text-sm font-mono text-blue-400 w-8">{parameters.batchSize}</span>
+                        </div>
+                      </Field>
+                    )}
+
+                    {/* Action Buttons */}
+                    <FieldSeparator />
                     <Button 
                       onClick={handleSave} 
                       disabled={isPending}
@@ -321,7 +334,7 @@ export function TuneParametersPage({ role }: TuneParametersPageProps) {
                       <RotateCcw className="w-4 h-4 mr-2" />
                       Reset to Default
                     </Button>
-                  </div>
+                  </FieldGroup>
                 </CardContent>
               </Card>
             </div>

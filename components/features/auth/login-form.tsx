@@ -12,6 +12,14 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Field,
+  FieldLabel,
+  FieldError,
+  FieldGroup,
+  FieldDescription,
+} from '@/components/ui/field'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -95,9 +103,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -106,10 +114,10 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-              </div>
-              <div className="grid gap-2">
+              </Field>
+              <Field>
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
                   <Link
                     href="/auth/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -124,41 +132,35 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-              </div>
+              </Field>
 
-              <div className="grid gap-2">
-                <Label>Login as</Label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="expert"
-                      checked={selectedRole === "expert"}
-                      onChange={(e) => setSelectedRole(e.target.value as any)}
-                      className="accent-blue-600"
-                    />
-                    Expert
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="admin"
-                      checked={selectedRole === "admin"}
-                      onChange={(e) => setSelectedRole(e.target.value as any)}
-                      className="accent-blue-600"
-                    />
-                    Admin
-                  </label>
-                </div>
-              </div>
+              <Field>
+                <FieldLabel>Login as</FieldLabel>
+                <RadioGroup
+                  value={selectedRole}
+                  onValueChange={(value) => setSelectedRole(value as "expert" | "admin")}
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <FieldLabel htmlFor="role-expert" className="cursor-pointer">
+                    <Field className="border rounded-lg p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5">
+                      <RadioGroupItem value="expert" id="role-expert" className="sr-only" />
+                      <div className="text-sm font-medium">Expert</div>
+                    </Field>
+                  </FieldLabel>
+                  <FieldLabel htmlFor="role-admin" className="cursor-pointer">
+                    <Field className="border rounded-lg p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5">
+                      <RadioGroupItem value="admin" id="role-admin" className="sr-only" />
+                      <div className="text-sm font-medium">Admin</div>
+                    </Field>
+                  </FieldLabel>
+                </RadioGroup>
+              </Field>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              <FieldError>{error}</FieldError>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Login'}
               </Button>
-            </div>
+            </FieldGroup>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link href="/auth/sign-up" className="underline underline-offset-4">

@@ -12,6 +12,12 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Field,
+  FieldLabel,
+  FieldError,
+  FieldGroup,
+} from '@/components/ui/field'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -66,9 +72,9 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
           </CardHeader>
           <CardContent>
             <form onSubmit={handleForgotPassword}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
                     id="email"
                     type="email"
@@ -77,12 +83,12 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
+                </Field>
+                <FieldError>{error}</FieldError>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Sending...' : 'Send reset email'}
                 </Button>
-              </div>
+              </FieldGroup>
               <div className="mt-4 text-center text-sm">
                 Already have an account?{' '}
                 <Link href="/auth/login" className="underline underline-offset-4">
