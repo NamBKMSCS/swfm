@@ -1,5 +1,4 @@
 # SWFM
-# SWFM
 
 ## Requisites
 
