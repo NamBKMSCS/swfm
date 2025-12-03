@@ -88,7 +88,7 @@ export function DataManagementPage() {
             await addDataRecord(payload)
             toast.success("Record added successfully")
           }
-          
+
           setFormData({
             date: new Date().toISOString().split("T")[0],
             time: "12:00",
@@ -284,8 +284,8 @@ export function DataManagementPage() {
                       className="bg-slate-900 border-slate-700 text-white"
                     />
                   </Field>
-                  <Button 
-                    onClick={handleAddRecord} 
+                  <Button
+                    onClick={handleAddRecord}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     disabled={isPending}
                   >
@@ -362,22 +362,20 @@ export function DataManagementPage() {
                             {record.value.toFixed(2)} <span className="text-xs text-slate-500">{record.unit}</span>
                           </td>
                           <td className="p-3">
-                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                              record.source === "automated" 
-                                ? "bg-blue-900/50 text-blue-200" 
+                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${record.source === "automated"
+                                ? "bg-blue-900/50 text-blue-200"
                                 : "bg-slate-700 text-slate-300"
-                            }`}>
+                              }`}>
                               {record.source}
                             </span>
                           </td>
                           <td className="p-3">
                             <button
                               onClick={() => handleVerifyRecord(record.id, record.status)}
-                              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${
-                                record.status === "verified"
+                              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${record.status === "verified"
                                   ? "bg-green-900/50 text-green-200 hover:bg-green-900/70"
                                   : "bg-orange-900/50 text-orange-200 hover:bg-orange-900/70"
-                              }`}
+                                }`}
                             >
                               {record.status === "verified" ? (
                                 <CheckCircle2 className="w-3 h-3" />
@@ -389,13 +387,13 @@ export function DataManagementPage() {
                           </td>
                           <td className="p-3 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button 
+                              <button
                                 onClick={() => handleEditRecord(record)}
                                 className="p-1 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDeleteRecord(record.id)}
                                 className="p-1 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded"
                               >

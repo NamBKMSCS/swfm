@@ -163,7 +163,7 @@ export function PreprocessingConfigPage() {
     startTransition(async () => {
       try {
         // Save each method config
-        await Promise.all(methods.map(method => 
+        await Promise.all(methods.map(method =>
           savePreprocessingConfig(method.id, method.enabled, method.parameters)
         ))
         toast.success("Configuration saved successfully")
@@ -262,10 +262,10 @@ export function PreprocessingConfigPage() {
                       e.stopPropagation()
                     }}
                   >
-                    <Switch 
+                    <Switch
                       id={`switch-${method.id}`}
-                      checked={method.enabled} 
-                      onCheckedChange={() => handleToggleMethod(method.id)} 
+                      checked={method.enabled}
+                      onCheckedChange={() => handleToggleMethod(method.id)}
                     />
                   </div>
                   <div className="flex-1">
@@ -276,9 +276,8 @@ export function PreprocessingConfigPage() {
                   </div>
                 </Field>
                 <ChevronDown
-                  className={`w-5 h-5 text-slate-400 transition ${
-                    expandedMethod === method.id ? "rotate-180" : ""
-                  }`}
+                  className={`w-5 h-5 text-slate-400 transition ${expandedMethod === method.id ? "rotate-180" : ""
+                    }`}
                 />
               </div>
 

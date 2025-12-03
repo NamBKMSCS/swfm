@@ -140,11 +140,10 @@ export function TuneParametersPage({ role }: TuneParametersPageProps) {
                       <button
                         key={key}
                         onClick={() => setSelectedModel(key)}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          selectedModel === key
+                        className={`p-4 rounded-lg border-2 transition-all ${selectedModel === key
                             ? "border-blue-500 bg-blue-500/10"
                             : "border-slate-600 bg-slate-700/50 hover:border-slate-500"
-                        }`}
+                          }`}
                       >
                         <p className="text-sm font-medium text-white">{config.label}</p>
                       </button>
@@ -221,11 +220,10 @@ export function TuneParametersPage({ role }: TuneParametersPageProps) {
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => handleParameterChange("seasonal", !parameters.seasonal)}
-                            className={`flex-1 py-2 rounded text-xs font-medium transition-colors ${
-                              parameters.seasonal
+                            className={`flex-1 py-2 rounded text-xs font-medium transition-colors ${parameters.seasonal
                                 ? "bg-blue-600 text-white"
                                 : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                            }`}
+                              }`}
                           >
                             {parameters.seasonal ? "Enabled" : "Disabled"}
                           </button>
@@ -234,10 +232,10 @@ export function TuneParametersPage({ role }: TuneParametersPageProps) {
                     )}
 
                     {/* Separator between ARIMA and LSTM params */}
-                    {visibleParams.some(p => ["p", "d", "q", "seasonal"].includes(p)) && 
-                     visibleParams.some(p => ["lookback", "learningRate", "epochs", "batchSize"].includes(p)) && (
-                      <FieldSeparator>Neural Network Parameters</FieldSeparator>
-                    )}
+                    {visibleParams.some(p => ["p", "d", "q", "seasonal"].includes(p)) &&
+                      visibleParams.some(p => ["lookback", "learningRate", "epochs", "batchSize"].includes(p)) && (
+                        <FieldSeparator>Neural Network Parameters</FieldSeparator>
+                      )}
 
                     {/* LSTM Parameters */}
                     {visibleParams.includes("lookback") && (
@@ -318,8 +316,8 @@ export function TuneParametersPage({ role }: TuneParametersPageProps) {
 
                     {/* Action Buttons */}
                     <FieldSeparator />
-                    <Button 
-                      onClick={handleSave} 
+                    <Button
+                      onClick={handleSave}
                       disabled={isPending}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     >
