@@ -212,7 +212,7 @@ export function DataManagementPage() {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Link href="/admin/preprocessing">
+                <Link href="/preprocessing">
                   <Button
                     variant="outline"
                     className="border-slate-600 text-slate-300 hover:bg-slate-700"
@@ -233,66 +233,68 @@ export function DataManagementPage() {
             </CardHeader>
             {showAddForm && (
               <CardContent>
-                <FieldGroup className="grid grid-cols-5 gap-4 items-end">
-                  <Field>
-                    <FieldLabel className="text-xs text-slate-400">Date</FieldLabel>
-                    <div className="relative">
-                      <CalendarIcon className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
+                <div className="flex flex-col gap-4">
+                  <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Field>
+                      <FieldLabel className="text-xs text-slate-400">Date</FieldLabel>
+                      <div className="relative">
+                        <CalendarIcon className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
+                        <Input
+                          type="date"
+                          value={formData.date}
+                          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                          className="pl-8 bg-slate-900 border-slate-700 text-white"
+                        />
+                      </div>
+                    </Field>
+                    <Field>
+                      <FieldLabel className="text-xs text-slate-400">Time</FieldLabel>
                       <Input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="pl-8 bg-slate-900 border-slate-700 text-white"
+                        type="time"
+                        value={formData.time}
+                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                        className="bg-slate-900 border-slate-700 text-white"
                       />
-                    </div>
-                  </Field>
-                  <Field>
-                    <FieldLabel className="text-xs text-slate-400">Time</FieldLabel>
-                    <Input
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel className="text-xs text-slate-400">Station</FieldLabel>
-                    <Select
-                      value={formData.station}
-                      onValueChange={(value) => setFormData({ ...formData, station: value })}
-                    >
-                      <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
-                        <SelectValue placeholder="Select Station" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {stations.map((station) => (
-                          <SelectItem key={station} value={station}>
-                            {station}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field>
-                    <FieldLabel className="text-xs text-slate-400">Water Level (m)</FieldLabel>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={formData.value}
-                      onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
-                  </Field>
+                    </Field>
+                    <Field>
+                      <FieldLabel className="text-xs text-slate-400">Station</FieldLabel>
+                      <Select
+                        value={formData.station}
+                        onValueChange={(value) => setFormData({ ...formData, station: value })}
+                      >
+                        <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                          <SelectValue placeholder="Select Station" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {stations.map((station) => (
+                            <SelectItem key={station} value={station}>
+                              {station}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field>
+                      <FieldLabel className="text-xs text-slate-400">Water Level (m)</FieldLabel>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={formData.value}
+                        onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                        className="bg-slate-900 border-slate-700 text-white"
+                      />
+                    </Field>
+                  </FieldGroup>
                   <Button
                     onClick={handleAddRecord}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white sm:w-auto sm:self-end"
                     disabled={isPending}
                   >
                     {isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
                     {editingId ? "Update Record" : "Add Record"}
                   </Button>
-                </FieldGroup>
+                </div>
               </CardContent>
             )}
           </Card>
@@ -363,8 +365,8 @@ export function DataManagementPage() {
                           </td>
                           <td className="p-3">
                             <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${record.source === "automated"
-                                ? "bg-blue-900/50 text-blue-200"
-                                : "bg-slate-700 text-slate-300"
+                              ? "bg-blue-900/50 text-blue-200"
+                              : "bg-slate-700 text-slate-300"
                               }`}>
                               {record.source}
                             </span>
@@ -373,8 +375,8 @@ export function DataManagementPage() {
                             <button
                               onClick={() => handleVerifyRecord(record.id, record.status)}
                               className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${record.status === "verified"
-                                  ? "bg-green-900/50 text-green-200 hover:bg-green-900/70"
-                                  : "bg-orange-900/50 text-orange-200 hover:bg-orange-900/70"
+                                ? "bg-green-900/50 text-green-200 hover:bg-green-900/70"
+                                : "bg-orange-900/50 text-orange-200 hover:bg-orange-900/70"
                                 }`}
                             >
                               {record.status === "verified" ? (

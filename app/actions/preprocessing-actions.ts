@@ -32,7 +32,7 @@ export async function getPreprocessingConfigs(): Promise<PreprocessingConfig[]> 
 export async function savePreprocessingConfig(methodId: string, enabled: boolean, parameters: any) {
   // Mock update
   console.log(`Saving config for ${methodId}:`, { enabled, parameters })
-  
+
   // In a real app, we would save to DB here
   // await db.preprocessingConfigs.upsert({
   //   where: { method_id: methodId },
@@ -40,7 +40,7 @@ export async function savePreprocessingConfig(methodId: string, enabled: boolean
   //   create: { method_id: methodId, enabled, config: parameters }
   // })
 
-  revalidatePath('/admin/preprocessing')
+  revalidatePath('/preprocessing')
   return { success: true }
 }
 
