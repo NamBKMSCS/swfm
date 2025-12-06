@@ -52,7 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         { title: "General", url: "/admin" },
         { title: "User Management", url: "/admin/users" },
-        { title: "Data Management", url: "/admin/data" },
+        { title: "Data Management", url: "/data" },
         { title: "Preprocessing", url: "/preprocessing" },
         { title: "Model Evaluation", url: "/evaluation" },
       ],

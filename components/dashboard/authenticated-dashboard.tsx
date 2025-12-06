@@ -100,7 +100,7 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                       Manage Users
                     </Button>
                   </Link>
-                  <Link href="/admin/data">
+                  <Link href="/data">
                     <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
                       <Database className="mr-2 h-4 w-4" />
                       Data Management
