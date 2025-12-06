@@ -50,12 +50,10 @@ import {
   checkMLServiceHealth,
   type MLModel
 } from "@/app/actions/ml-actions"
+import { useAuth } from "@/providers/auth-provider"
 
-interface ModelRegistryProps {
-  role: "admin" | "expert"
-}
-
-export function ModelRegistry({ role }: ModelRegistryProps) {
+export function ModelRegistry() {
+  const { role } = useAuth()
   const [models, setModels] = useState<MLModel[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)

@@ -1,28 +1,44 @@
 # Next.js App Dockerfile
 FROM node:20-alpine AS base
 
-# Install dependencies only when needed
+# Install dependencies
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+# Enable pnpm via corepack
+RUN corepack enable pnpm
 
-# Install pnpm and dependencies
-RUN corepack enable pnpm && pnpm i --frozen-lockfile
+# Copy package files for dependency fetching
+COPY package.json pnpm-lock.yaml* .npmrc* ./
+
+# Fetch dependencies to pnpm store (no symlinking yet)
+RUN pnpm fetch --frozen-lockfile
 
 # Build stage
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
+# Enable pnpm via corepack
+RUN corepack enable pnpm
+
+# Copy package files and pnpm config
+COPY package.json pnpm-lock.yaml* .npmrc* ./
+
+# Copy pnpm store from deps stage
+COPY --from=deps /root/.local/share/pnpm/store /root/.local/share/pnpm/store
+
+# Install dependencies from cached store using hoisted linking
+RUN pnpm install --frozen-lockfile --offline
+
+# Copy application code
 COPY . .
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN corepack enable pnpm && pnpm build
+RUN pnpm build
 
 # Production stage
 FROM base AS runner

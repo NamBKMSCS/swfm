@@ -1,7 +1,6 @@
 "use client"
 
 import { AuthenticatedDashboard } from "@/components/dashboard/authenticated-dashboard"
-import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"
 
@@ -17,8 +16,6 @@ export default function ExpertPage() {
   }
 
   return (
-    <MainLayout>
       <AuthenticatedDashboard role="expert" />
-    </MainLayout>
   )
 }

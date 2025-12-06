@@ -1,6 +1,43 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { getPrediction } from "@/app/actions/ml-actions"
+
+/**
+ * Get ML predictions for chart display
+ * Fetches from ML service and transforms to chart format
+ */
+export async function getMLPredictionForChart(
+  stationId: number,
+  modelName: string,
+  horizonHours: number = 24
+) {
+  try {
+    const result = await getPrediction(modelName, stationId, horizonHours)
+    
+    if (!result.success) {
+      return { forecasts: [], error: "Prediction failed" }
+    }
+    
+    // Transform to chart format
+    const forecasts = result.forecasts.map(f => ({
+      target_date: f.timestamp,
+      water_level: f.value,
+      lower_bound: f.lower_bound,
+      upper_bound: f.upper_bound,
+    }))
+    
+    return { 
+      forecasts, 
+      modelName: result.model_name,
+      modelVersion: result.model_version,
+      error: null 
+    }
+  } catch (error) {
+    console.error("Error fetching ML prediction:", error)
+    return { forecasts: [], error: error instanceof Error ? error.message : "Unknown error" }
+  }
+}
 
 /**
  * Get water level chart data for a specific station

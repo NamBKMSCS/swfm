@@ -33,7 +33,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/dashboard",
       icon: LayoutDashboard,
       isActive: true,
-      items: [], // No sub-items for dashboard, but NavMain expects the array if we want it to work without crashing or we should check NavMain
+      items: [],
     },
     {
       title: "Expert Tools",
@@ -41,6 +41,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: Zap,
       items: [
         { title: "Tune Parameters", url: "/expert/tune" },
+        { title: "Model Registry", url: "/expert/models" },
+        { title: "Forecasting", url: "/expert/forecast" },
         { title: "Model Evaluation", url: "/evaluation" },
         { title: "Preprocessing", url: "/preprocessing" },
       ],
@@ -53,6 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: "General", url: "/admin" },
         { title: "User Management", url: "/admin/users" },
         { title: "Data Management", url: "/data" },
+        { title: "Model Registry", url: "/expert/models" },
         { title: "Preprocessing", url: "/preprocessing" },
         { title: "Model Evaluation", url: "/evaluation" },
       ],

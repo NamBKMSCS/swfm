@@ -1,7 +1,6 @@
 "use client"
 
 import { DataManagementPage } from "@/components/features/data-scientist/data-management"
-import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"
 
@@ -15,8 +14,6 @@ export default function DataPage() {
   }
 
   return (
-    <MainLayout>
       <DataManagementPage />
-    </MainLayout>
   )
 }

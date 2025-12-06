@@ -8,7 +8,8 @@ import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
 import { getStations, Station } from "@/app/actions/station-actions"
 import { getDashboardMetrics, DashboardMetrics } from "@/app/actions/dashboard-actions"
-import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield } from "lucide-react"
+import { checkMLServiceHealth } from "@/app/actions/ml-actions"
+import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield, Cpu, CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 
 interface AuthenticatedDashboardProps {
@@ -21,6 +22,7 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
   const [stations, setStations] = useState<Station[]>([])
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [mlServiceStatus, setMlServiceStatus] = useState<"online" | "offline" | "checking">("checking")
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     activeStations: 0,
     floodAlerts: 0,
@@ -42,14 +44,17 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
 
   const fetchData = async () => {
     try {
-      const [stationsData, metricsData] = await Promise.all([
+      const [stationsData, metricsData, mlHealth] = await Promise.all([
         getStations(),
-        getDashboardMetrics()
+        getDashboardMetrics(),
+        checkMLServiceHealth()
       ])
       setStations(stationsData)
       setMetrics(metricsData)
+      setMlServiceStatus(mlHealth.status === "healthy" ? "online" : "offline")
     } catch (error) {
       console.error("Error fetching data:", error)
+      setMlServiceStatus("offline")
     }
   }
 
@@ -75,9 +80,21 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-auto">
           <div className="px-6 pt-4 pb-2 flex justify-between items-center">
-            <span className="text-xs text-slate-400">
-              Last update: {lastUpdate.toLocaleTimeString('en-GB')} • Auto-refresh every 15 minutes
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-slate-400">
+                Last update: {lastUpdate.toLocaleTimeString('en-GB')} • Auto-refresh every 15 minutes
+              </span>
+              {/* ML Service Status */}
+              <span className={`text-xs flex items-center gap-1 ${
+                mlServiceStatus === "online" ? "text-green-400" : 
+                mlServiceStatus === "offline" ? "text-red-400" : "text-slate-400"
+              }`}>
+                {mlServiceStatus === "online" && <CheckCircle className="w-3 h-3" />}
+                {mlServiceStatus === "offline" && <XCircle className="w-3 h-3" />}
+                {mlServiceStatus === "checking" && <Cpu className="w-3 h-3 animate-pulse" />}
+                ML: {mlServiceStatus}
+              </span>
+            </div>
             {role === "admin" && (
               <span className="text-xs font-medium text-blue-400 flex items-center gap-1">
                 <Shield className="w-3 h-3" />

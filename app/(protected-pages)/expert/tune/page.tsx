@@ -1,7 +1,6 @@
 "use client"
 
 import { TuneParametersPage } from "@/components/features/data-scientist/tune-parameters"
-import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"
 
@@ -15,8 +14,8 @@ export default function TunePage() {
   }
 
   return (
-    <MainLayout>
-      <TuneParametersPage role={role as "expert" | "admin"} />
-    </MainLayout>
+    <div className="flex-1 flex flex-col overflow-hidden">
+        <TuneParametersPage role={role as "expert" | "admin"} />
+    </div>
   )
 }
