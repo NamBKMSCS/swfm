@@ -1,0 +1,78 @@
+# SWFM Docker Compose Configuration
+# Runs Next.js app, ML service, and MLflow
+
+services:
+  # Next.js Frontend Application
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: swfm-nextjs
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - ML_SERVICE_URL=http://ml-service:8000
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY}
+    depends_on:
+      - ml-service
+    networks:
+      - swfm-network
+    restart: unless-stopped
+
+  # FastAPI ML Service with MLflow
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: swfm-ml-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=false
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_ARTIFACT_ROOT=/app/mlartifacts
+      - CORS_ORIGINS=["http://localhost:3000","http://nextjs:3000"]
+    volumes:
+      - ml-models:/app/models
+      - mlflow-artifacts:/app/mlartifacts
+    depends_on:
+      - mlflow
+    networks:
+      - swfm-network
+    restart: unless-stopped
+
+  # MLflow Tracking Server
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.0
+    container_name: swfm-mlflow
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow.db
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - mlflow-data:/mlflow
+      - mlflow-artifacts:/mlflow/artifacts
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:///mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
+    networks:
+      - swfm-network
+    restart: unless-stopped
+
+networks:
+  swfm-network:
+    driver: bridge
+
+volumes:
+  ml-models:
+    name: swfm-ml-models
+  mlflow-data:
+    name: swfm-mlflow-data
+  mlflow-artifacts:
+    name: swfm-mlflow-artifacts

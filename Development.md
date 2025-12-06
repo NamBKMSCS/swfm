@@ -46,7 +46,7 @@ After Supabase starts successfully, it will output the API URL and keys. You nee
 
 2.  Update `.env.local` with the values from the `supabase start` output:
     - `NEXT_PUBLIC_SUPABASE_URL`: Your API URL
-    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your anon key
+    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY`: Your anon key
     - `SUPABASE_SERVICE_ROLE_KEY`: Your service_role key (if needed for server-side admin tasks)
 
 ### 5. Run the Development Server
