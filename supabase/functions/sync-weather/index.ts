@@ -4,7 +4,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const OPENWEATHER_API_KEY = Deno.env.get('OPENWEATHER_API_KEY') || 'REDACTED_API_KEY'
+const OPENWEATHER_API_KEY = Deno.env.get('OPENWEATHER_API_KEY')
 const OPENWEATHER_API_BASE = 'https://api.openweathermap.org/data/2.5/weather'
 
 interface OpenWeatherResponse {
