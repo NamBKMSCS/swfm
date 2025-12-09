@@ -8,6 +8,8 @@ import { Stations } from "@/lib/supabase/schema"
 export type StationWithStatus = Stations & {
   waterLevel: number
   status: 'normal' | 'warning' | 'critical'
+  alarm_level: number | null
+  flood_level: number | null
 }
 
 export async function getStations(): Promise<StationWithStatus[]> {
@@ -21,7 +23,9 @@ export async function getStations(): Promise<StationWithStatus[]> {
       station_code,
       latitude,
       longitude,
-      country
+      country,
+      alarm_level,
+      flood_level
     `)
     .order('name')
 
@@ -43,14 +47,20 @@ export async function getStations(): Promise<StationWithStatus[]> {
     const waterLevel = measurement?.water_level || 0
     let status: 'normal' | 'warning' | 'critical' = 'normal'
 
-    if (waterLevel > 4.5) status = 'critical'
-    else if (waterLevel > 3.5) status = 'warning'
+    // Use station-specific thresholds if available, otherwise use defaults
+    const floodLevel = station.flood_level ?? 4.5
+    const alarmLevel = station.alarm_level ?? 3.5
+
+    if (waterLevel >= floodLevel) status = 'critical'
+    else if (waterLevel >= alarmLevel) status = 'warning'
 
     return {
       ...station,
       country: station.country ?? '',
       waterLevel,
-      status
+      status,
+      alarm_level: station.alarm_level,
+      flood_level: station.flood_level
     } as StationWithStatus
   }))
 

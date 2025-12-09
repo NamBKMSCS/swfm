@@ -8,7 +8,7 @@ import { StationWithStatus } from '@/app/actions/station-actions'
 import 'leaflet/dist/leaflet.css'
 
 // Dynamic imports to avoid SSR issues with ssr: false
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { 
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), {
   ssr: false,
   loading: () => <div className="w-full h-[500px] bg-slate-800 rounded-lg flex items-center justify-center"><div className="text-slate-400">Loading map...</div></div>
 })
@@ -25,23 +25,60 @@ interface LeafletMapProps {
 
 export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false)
+  const [icons, setIcons] = useState<any>(null)
 
   useEffect(() => {
     setIsClient(true)
-    
+
     // Fix for Leaflet icon in Next.js
     if (typeof window !== 'undefined') {
       const L = require('leaflet')
       delete (L.Icon.Default.prototype as any)._getIconUrl
-      
-      // Custom green icon for Mekong stations
-      L.Icon.Default.mergeOptions({
+
+      // Create custom icons for different alert levels
+      const greenIcon = new L.Icon({
         iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      })
+
+      const yellowIcon = new L.Icon({
+        iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      })
+
+      const redIcon = new L.Icon({
+        iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      })
+
+      setIcons({
+        normal: greenIcon,
+        warning: yellowIcon,
+        critical: redIcon
       })
     }
   }, [])
+
+  // Helper function to get icon based on station status
+  const getMarkerIcon = (status: 'normal' | 'warning' | 'critical') => {
+    if (!icons) return undefined
+    return icons[status]
+  }
 
   if (!isClient) {
     return (
@@ -64,7 +101,7 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
           attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
           url="http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}"
         />
-        
+
         {/* Mekong River WMS Layer from GeoServer */}
         <WMSTileLayer
           url="http://103.77.166.185:8080/geoserver/ne/wms"
@@ -76,16 +113,17 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
           }}
           attribution='&copy; <a href="http://103.77.166.185:8080/geoserver">GeoServer</a>'
         />
-        
+
         {stations.map((station) => (
           <Marker
             key={station.id}
             position={[station.latitude, station.longitude]}
+            icon={getMarkerIcon(station.status)}
             eventHandlers={{
               click: () => onStationClick?.(station)
             }}
           >
-            
+
           </Marker>
         ))}
       </MapContainer>

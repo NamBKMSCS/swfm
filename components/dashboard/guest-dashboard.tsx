@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LeafletMap } from "@/components/dashboard/leaflet-map"
-import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
 import { getStations, StationWithStatus } from "@/app/actions/station-actions"
 
 
-export function GuestDashboard() {  
+export function GuestDashboard() {
   const [selectedStation, setSelectedStation] = useState<string>("Vientiane")
   const [selectedStationData, setSelectedStationData] = useState<StationWithStatus | null>(null)
   const [stations, setStations] = useState<StationWithStatus[]>([])
@@ -55,7 +54,7 @@ export function GuestDashboard() {
             Last update: {lastUpdate ? lastUpdate.toLocaleTimeString('en-GB') : '...'} • Auto-refresh every 15 minutes
           </span>
         </div>
-        
+
         <StationDetailModal
           station={selectedStationData}
           isOpen={isModalOpen}
@@ -63,36 +62,20 @@ export function GuestDashboard() {
         />
 
         <div className="p-6 pt-2 space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 space-y-6">
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white">Monitoring Stations</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Mekong River water level forecast system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <LeafletMap 
-                    stations={stations} 
-                    onStationClick={handleStationClick}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white">10-Day Forecast</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    {selectedStation} - Water Level Prediction
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ForecastChart station={selectedStation} />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">Monitoring Stations</CardTitle>
+              <CardDescription className="text-slate-400">
+                Mekong River water level forecast system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LeafletMap
+                stations={stations}
+                onStationClick={handleStationClick}
+              />
+            </CardContent>
+          </Card>
         </div>
       </main>
     </>

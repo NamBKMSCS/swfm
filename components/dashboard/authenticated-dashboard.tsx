@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LeafletMap } from "@/components/dashboard/leaflet-map"
-import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
 import { getStations, StationWithStatus } from "@/app/actions/station-actions"
 import { getDashboardMetrics, DashboardMetrics } from "@/app/actions/dashboard-actions"
@@ -85,10 +84,9 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                 Last update: {lastUpdate.toLocaleTimeString('en-GB')} • Auto-refresh every 15 minutes
               </span>
               {/* ML Service Status */}
-              <span className={`text-xs flex items-center gap-1 ${
-                mlServiceStatus === "online" ? "text-green-400" : 
-                mlServiceStatus === "offline" ? "text-red-400" : "text-slate-400"
-              }`}>
+              <span className={`text-xs flex items-center gap-1 ${mlServiceStatus === "online" ? "text-green-400" :
+                  mlServiceStatus === "offline" ? "text-red-400" : "text-slate-400"
+                }`}>
                 {mlServiceStatus === "online" && <CheckCircle className="w-3 h-3" />}
                 {mlServiceStatus === "offline" && <XCircle className="w-3 h-3" />}
                 {mlServiceStatus === "checking" && <Cpu className="w-3 h-3 animate-pulse" />}
@@ -192,18 +190,6 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                     stations={stations}
                     onStationClick={handleStationClick}
                   />
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white">Forecast Comparison</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    {selectedStation} - Model Comparison
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ForecastChart station={selectedStation} />
                 </CardContent>
               </Card>
             </div>

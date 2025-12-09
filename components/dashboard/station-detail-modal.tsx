@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { StationChart } from '@/components/dashboard/station-chart'
+import { ForecastChart } from '@/components/dashboard/forecast-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X, Cloud, Thermometer, Droplets, Wind, Gauge } from 'lucide-react'
@@ -43,7 +44,7 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
 
   return (
     <div
-      className="fixed inset-0 bg-black/90 flex items-center justify-center z-[9999] p-2 sm:p-4"
+      className="fixed inset-0 bg-black/90 flex items-center justify-center z-9999 p-2 sm:p-4"
       onClick={onClose}
     >
       <div
@@ -121,10 +122,10 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                       <p className="text-sm text-slate-400 capitalize">{weather.weather_description}</p>
                     </div>
                   )}
-                  
+
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     {/* Temperature */}
-                    <div className="text-center p-3 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg border border-orange-500/30">
+                    <div className="text-center p-3 bg-linear-to-br from-orange-500/20 to-red-500/20 rounded-lg border border-orange-500/30">
                       <Thermometer className="w-5 h-5 mx-auto mb-1 text-orange-400" />
                       <p className="text-slate-400 text-xs">Temperature</p>
                       <p className="text-xl font-bold text-white">
@@ -138,7 +139,7 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                     </div>
 
                     {/* Humidity */}
-                    <div className="text-center p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg border border-blue-500/30">
+                    <div className="text-center p-3 bg-linear-to-br from-blue-500/20 to-cyan-500/20 rounded-lg border border-blue-500/30">
                       <Droplets className="w-5 h-5 mx-auto mb-1 text-blue-400" />
                       <p className="text-slate-400 text-xs">Humidity</p>
                       <p className="text-xl font-bold text-white">
@@ -147,7 +148,7 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                     </div>
 
                     {/* Wind */}
-                    <div className="text-center p-3 bg-gradient-to-br from-teal-500/20 to-green-500/20 rounded-lg border border-teal-500/30">
+                    <div className="text-center p-3 bg-linear-to-br from-teal-500/20 to-green-500/20 rounded-lg border border-teal-500/30">
                       <Wind className="w-5 h-5 mx-auto mb-1 text-teal-400" />
                       <p className="text-slate-400 text-xs">Wind</p>
                       <p className="text-xl font-bold text-white">
@@ -157,7 +158,7 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                     </div>
 
                     {/* Pressure */}
-                    <div className="text-center p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30">
+                    <div className="text-center p-3 bg-linear-to-br from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30">
                       <Gauge className="w-5 h-5 mx-auto mb-1 text-purple-400" />
                       <p className="text-slate-400 text-xs">Pressure</p>
                       <p className="text-xl font-bold text-white">
@@ -198,6 +199,20 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
             />
           </div>
 
+          {/* Forecast Chart */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">10-Day Water Level Forecast</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ForecastChart
+                station={station.name}
+                stationId={station.id}
+                showMultiple={true}
+              />
+            </CardContent>
+          </Card>
+
           {/* Additional Info */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
@@ -230,15 +245,21 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs sm:text-sm">Normal</span>
-                    <span className="text-green-400 font-medium text-sm">{'< 3.0m'}</span>
+                    <span className="text-green-400 font-medium text-sm">
+                      {'< '}{station.alarm_level ?? 3.5}m
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs sm:text-sm">Warning</span>
-                    <span className="text-yellow-400 font-medium text-sm">3.0 - 4.0m</span>
+                    <span className="text-yellow-400 font-medium text-sm">
+                      {station.alarm_level ?? 3.5}m - {station.flood_level ?? 4.5}m
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs sm:text-sm">Critical</span>
-                    <span className="text-red-400 font-medium text-sm">{'> 4.0m'}</span>
+                    <span className="text-red-400 font-medium text-sm">
+                      {'>= '}{station.flood_level ?? 4.5}m
+                    </span>
                   </div>
                 </div>
               </CardContent>
