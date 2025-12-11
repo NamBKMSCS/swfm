@@ -24,6 +24,22 @@ MLFLOW_PORT=5000
 API_PORT=8000
 AUTO_TRAIN_INTERVAL=3600  # 1 hour in seconds (adjust as needed)
 
+# Load environment variables if present
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    set -a
+    source "$SCRIPT_DIR/.env"
+    set +a
+fi
+
+# Postgres (MLflow backend store) configuration
+PG_CONTAINER_NAME=${MLFLOW_DB_CONTAINER_NAME:-swfm-mlflow-postgres}
+PG_IMAGE=${MLFLOW_DB_IMAGE:-postgres:14}
+PG_PORT=${MLFLOW_DB_PORT:-5432}
+PG_DB=${MLFLOW_DB_NAME:-mlflow}
+PG_USER=${MLFLOW_DB_USER:-mlflow}
+PG_PASSWORD=${MLFLOW_DB_PASSWORD:-mlflow}
+PG_DATA_DIR="$SCRIPT_DIR/mlflow_pgdata"
+
 # Create logs directory
 mkdir -p "$LOG_DIR"
 
@@ -48,6 +64,35 @@ check_process() {
     else
         return 1
     fi
+}
+
+# Check if a docker container is running
+check_container_running() {
+    local name="$1"
+    if docker ps --format '{{.Names}}' | grep -q "^${name}$"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Wait for Postgres container to be healthy
+wait_for_postgres() {
+    local name="$1"
+    local max_attempts=30
+    local attempt=0
+
+    print_msg "Waiting for Postgres to be ready..." "$YELLOW"
+    while [ $attempt -lt $max_attempts ]; do
+        if docker exec "$name" pg_isready -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1; then
+            print_msg "✓ Postgres is ready" "$GREEN"
+            return 0
+        fi
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    print_msg "✗ Postgres failed to become ready" "$RED"
+    return 1
 }
 
 # Wait for service to be ready
@@ -96,6 +141,13 @@ stop_services() {
         lsof -ti:$MLFLOW_PORT | xargs kill -9 2>/dev/null || true
         sleep 2
     fi
+
+    # Stop Postgres container (optional)
+    if docker ps --format '{{.Names}}' | grep -q "^${PG_CONTAINER_NAME}$"; then
+        print_msg "Stopping Postgres container ${PG_CONTAINER_NAME}..." "$YELLOW"
+        docker stop "$PG_CONTAINER_NAME" >/dev/null 2>&1 || true
+        sleep 2
+    fi
     
     print_msg "✓ All services stopped" "$GREEN"
 }
@@ -111,9 +163,12 @@ start_mlflow() {
     
     cd "$SCRIPT_DIR"
     
-    print_msg "Starting MLflow on port $MLFLOW_PORT..." "$YELLOW"
+    # Compose backend URI for Postgres
+    local backend_uri="postgresql://${PG_USER}:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DB}"
+
+    print_msg "Starting MLflow on port $MLFLOW_PORT with Postgres backend..." "$YELLOW"
     nohup mlflow server \
-        --backend-store-uri sqlite:///mlflow.db \
+        --backend-store-uri "$backend_uri" \
         --default-artifact-root ./mlartifacts \
         --host 0.0.0.0 \
         --port $MLFLOW_PORT \
@@ -129,6 +184,34 @@ start_mlflow() {
         print_msg "✗ Failed to start MLflow" "$RED"
         return 1
     fi
+}
+
+# Start Postgres (MLflow backend store) in Docker
+start_mlflow_postgres() {
+    print_header "Starting Postgres for MLflow"
+
+    mkdir -p "$PG_DATA_DIR"
+
+    if check_container_running "$PG_CONTAINER_NAME"; then
+        print_msg "Postgres container ${PG_CONTAINER_NAME} already running" "$YELLOW"
+    else
+        print_msg "Launching Postgres container ${PG_CONTAINER_NAME}..." "$YELLOW"
+        docker run -d \
+            --name "$PG_CONTAINER_NAME" \
+            -e POSTGRES_DB="$PG_DB" \
+            -e POSTGRES_USER="$PG_USER" \
+            -e POSTGRES_PASSWORD="$PG_PASSWORD" \
+            -p "$PG_PORT:5432" \
+            -v "$PG_DATA_DIR:/var/lib/postgresql/data" \
+            --health-cmd "pg_isready -U $PG_USER -d $PG_DB" \
+            --health-interval 10s \
+            --health-timeout 5s \
+            --health-retries 10 \
+            "$PG_IMAGE" >/dev/null 2>&1
+    fi
+
+    wait_for_postgres "$PG_CONTAINER_NAME" || return 1
+    print_msg "✓ Postgres started for MLflow backend" "$GREEN"
 }
 
 # Start ML API service
@@ -271,6 +354,9 @@ main() {
     # Stop any existing services
     stop_services
     
+    # Start Postgres backend first
+    start_mlflow_postgres || exit 1
+
     # Start services in order
     start_mlflow || exit 1
     start_api_service || exit 1

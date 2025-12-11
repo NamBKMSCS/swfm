@@ -1,6 +1,26 @@
 version: '3.8'
 
 services:
+  mlflow-postgres:
+    image: postgres:14
+    container_name: swfm-mlflow-postgres
+    environment:
+      - POSTGRES_DB=${MLFLOW_DB_NAME:-mlflow}
+      - POSTGRES_USER=${MLFLOW_DB_USER:-mlflow}
+      - POSTGRES_PASSWORD=${MLFLOW_DB_PASSWORD:-mlflow}
+    ports:
+      - "${MLFLOW_DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MLFLOW_DB_USER:-mlflow} -d ${MLFLOW_DB_NAME:-mlflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ml-network
+    restart: unless-stopped
+
   mlflow:
     image: python:3.10-slim
     container_name: swfm-mlflow
@@ -8,15 +28,13 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./mlruns:/app/mlruns
       - ./mlartifacts:/app/mlartifacts
-      - ./mlflow.db:/app/mlflow.db
     command: >
       sh -c "
         pip install mlflow==2.9.0 &&
         mlflow server 
-          --backend-store-uri sqlite:///mlflow.db 
-          --default-artifact-root ./mlartifacts 
+          --backend-store-uri postgresql://$${MLFLOW_DB_USER:-mlflow}:$${MLFLOW_DB_PASSWORD:-mlflow}@mlflow-postgres:5432/$${MLFLOW_DB_NAME:-mlflow} 
+          --default-artifact-root /app/mlartifacts 
           --host 0.0.0.0 
           --port 5000
       "
@@ -25,6 +43,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      mlflow-postgres:
+        condition: service_healthy
     networks:
       - ml-network
     restart: unless-stopped
@@ -99,3 +120,4 @@ networks:
 volumes:
   mlruns:
   mlartifacts:
+  pgdata:
