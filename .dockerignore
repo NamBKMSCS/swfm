@@ -1,45 +1,75 @@
+# Git
+.git
+.gitignore
+
 # Dependencies
 node_modules
+**/node_modules
 .pnpm-store
+**/.pnpm-store
 
-# Next.js
+# Build outputs
 .next
+**/.next
 out
+**/out
+dist
+**/dist
+build
+**/build
+.turbo
+**/.turbo
 
-# Testing
-coverage
+# Development
+.cursor
+.vscode
+.idea
 
-# Misc
-.DS_Store
-*.pem
+# Environment
+.env
+.env.*
+.env*.local
+**/.env
+**/.env.*
+**/.env*.local
 
-# Debug
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+logs
+**/logs
 
-# Local env files
-.env*.local
-.env
-
-# Vercel
-.vercel
+# Misc
+.DS_Store
+*.pem
+coverage
+**/.cache
 
 # TypeScript
 *.tsbuildinfo
-next-env.d.ts
 
-# IDE
-.vscode
-.idea
+# ML Service specific
+apps/ml-service/venv
+apps/ml-service/.venv
+apps/ml-service/mlflow_pgdata
+apps/ml-service/mlartifacts
+apps/ml-service/mlruns
+apps/ml-service/*.db
+apps/ml-service/*.db-shm
+apps/ml-service/*.db-wal
 
-# Git
-.git
-.gitignore
-README.md
+# Supabase
+supabase/.branches
+supabase/.temp
 
 # Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
+**/Dockerfile
+**/docker-compose*.yml
+**/.dockerignore
+
+# Documentation
+README.md
+Development.md

@@ -26,13 +26,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# MLflow artifacts (ml-service)
-ml-service/mlartifacts/
-ml-service/mlruns/
-ml-service/mlflow.db
-ml-service/mlflow.log
-ml-service/*.db-shm
-ml-service/*.db-wal
+.turbo/
+.next/
 
 # Python
 __pycache__/
@@ -40,7 +35,15 @@ __pycache__/
 *$py.class
 *.so
 .Python
-ml-service/venv/
-ml-service/.venv/
-ml-service/ENV/
+apps/ml-service/venv/
+apps/ml-service/.venv/
+apps/ml-service/ENV/
+apps/ml-service/env/
+apps/ml-service/mlflow_pgdata/
+apps/ml-service/logs/
+apps/ml-service/mlartifacts/
+apps/ml-service/mlruns/
+apps/ml-service/*.db
+apps/ml-service/*.db-shm
+apps/ml-service/*.db-wal
 ml-service/env/

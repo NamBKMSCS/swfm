@@ -1,0 +1,54 @@
+# Build outputs and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# MLflow data (these are created at runtime)
+mlflow_pgdata/
+mlruns/
+mlartifacts/
+mlflow.db
+mlflow.db-shm
+mlflow.db-wal
+mlflow.log
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Development
+.git
+.gitignore
+README.md
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Scripts that aren't needed in container
+start_ml_service.sh
+docker-start.sh
+
+# Testing and docs
+tests/
+docs/
+*.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

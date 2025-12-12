@@ -1,2 +1,6 @@
 onlyBuiltDependencies:
   - supabase
+
+packages:
+  - "apps/*"
+  - "packages/*"
