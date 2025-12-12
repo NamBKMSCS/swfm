@@ -113,7 +113,7 @@ export async function getStationChartData(stationId: number, days: number) {
   // Filter to show forecasts from the time range we're viewing
   const { data: forecasts, error: forecastsError } = await supabase
     .from('forecasts')
-    .select('target_date, water_level, model_id, forecast_date')
+    .select('target_date, water_level, forecast_date')
     .eq('station_id', stationId)
     .gte('target_date', startDate.toISOString())
     .lte('target_date', endDate.toISOString())

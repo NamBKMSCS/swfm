@@ -24,13 +24,15 @@ supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
 
 class GenerateForecastRequest(BaseModel):
     """Request to generate forecasts for a station"""
+
     station_id: Optional[int] = None  # None = unified model (all stations)
     horizons_minutes: List[int] = [15, 30, 45, 60]  # Prediction horizons
     save_to_db: bool = True  # Save forecasts to database
-    
+
 
 class GenerateForecastResponse(BaseModel):
     """Response from forecast generation"""
+
     success: bool
     message: str
     station_id: Optional[int]
@@ -74,14 +76,14 @@ class PredictionResponse(BaseModel):
 async def generate_forecasts_endpoint(request: GenerateForecastRequest):
     """
     Generate forecasts using trained models and save to database
-    
+
     This endpoint:
     1. Fetches the latest data for the station(s)
     2. Preprocesses the data (creates features)
     3. Loads the best model for each horizon
     4. Generates predictions
     5. Saves forecasts to the 'forecasts' table in Supabase
-    
+
     Example:
     ```json
     {
@@ -94,106 +96,132 @@ async def generate_forecasts_endpoint(request: GenerateForecastRequest):
     try:
         preprocessing_service = PreprocessingService()
         client = MlflowClient()
-        
+
         # Get station info if specific station requested
         if request.station_id is not None:
             # Check if station is excluded
             if request.station_id in [1, 7]:
                 raise HTTPException(
-                    status_code=400, 
-                    detail=f"Station {request.station_id} is excluded from predictions due to data quality issues"
+                    status_code=400,
+                    detail=f"Station {request.station_id} is excluded from predictions due to data quality issues",
                 )
-            
-            station_info = supabase.table('stations').select('*').eq('id', request.station_id).execute()
+
+            station_info = (
+                supabase.table("stations")
+                .select("*")
+                .eq("id", request.station_id)
+                .execute()
+            )
             if not station_info.data:
-                raise HTTPException(status_code=404, detail=f"Station {request.station_id} not found")
-            station_name = station_info.data[0]['name']
+                raise HTTPException(
+                    status_code=404, detail=f"Station {request.station_id} not found"
+                )
+            station_name = station_info.data[0]["name"]
         else:
             station_name = "All Stations (excluding stations 1 & 7)"
-        
-        print(f"\n{'='*70}")
+
+        print(f"\n{'=' * 70}")
         print(f"🔮 GENERATING FORECASTS")
         print(f"📍 Station: {station_name}")
         print(f"⏱️  Horizons: {request.horizons_minutes} minutes")
         print(f"🎯 Using unified models (station_id as feature)")
-        print(f"{'='*70}\n")
-        
+        print(f"{'=' * 70}\n")
+
         # For unified model, always fetch data for the specific station (or all if None)
         # but prepare features including station_id
         print("📊 Fetching and preprocessing latest data...")
-        X_latest, feature_names, scaler_info = preprocessing_service.prepare_latest_data_for_prediction(
-            station_id=request.station_id
+        X_latest, feature_names, scaler_info = (
+            preprocessing_service.prepare_latest_data_for_prediction(
+                station_id=request.station_id
+            )
         )
-        
+
         if X_latest is None or len(X_latest) == 0:
-            raise HTTPException(status_code=400, detail=f"No recent data available for {'station ' + str(request.station_id) if request.station_id else 'prediction'}. Please ensure there is data from the last 24 hours.")
-        
-        print(f"   ✓ Features prepared: {len(feature_names)} features, {len(X_latest)} samples")
-        
+            raise HTTPException(
+                status_code=400,
+                detail=f"No recent data available for {'station ' + str(request.station_id) if request.station_id else 'prediction'}. Please ensure there is data from the last 24 hours.",
+            )
+
+        print(
+            f"   ✓ Features prepared: {len(feature_names)} features, {len(X_latest)} samples"
+        )
+
         all_forecasts = []
         forecast_date = datetime.utcnow()
-        
+
         # RECURSIVE PREDICTION: Use each prediction as input for the next horizon
         # This implements the ideal approach: predict 15min → use it to predict 30min → use that for 45min, etc.
-        print(f"\n🔮 Starting RECURSIVE prediction for horizons: {request.horizons_minutes}")
+        print(
+            f"\n🔮 Starting RECURSIVE prediction for horizons: {request.horizons_minutes}"
+        )
         print(f"   💡 Each prediction will be used as input for the next horizon")
-        
+
         # Keep track of the current state (updated after each prediction)
         X_current = X_latest.copy()
         previous_prediction = None
-        
+
         # Generate forecasts for each horizon using UNIFIED models
         for horizon_idx, horizon in enumerate(request.horizons_minutes):
-            print(f"\n🎯 Generating forecast for {horizon}-minute horizon (step {horizon_idx + 1}/{len(request.horizons_minutes)})...")
-            
+            print(
+                f"\n🎯 Generating forecast for {horizon}-minute horizon (step {horizon_idx + 1}/{len(request.horizons_minutes)})..."
+            )
+
             # RECURSIVE UPDATE: If we have a previous prediction, update features
             if previous_prediction is not None:
-                print(f"   🔄 Updating features with previous prediction: {previous_prediction:.2f}cm")
-                
+                print(
+                    f"   🔄 Updating features with previous prediction: {previous_prediction:.2f}cm"
+                )
+
                 # Update water_level with the predicted value (this becomes the "current" water level for next prediction)
-                if 'water_level' in X_current.columns:
-                    old_value = X_current['water_level'].values[0]
-                    X_current['water_level'] = previous_prediction
-                    print(f"      • water_level: {old_value:.2f} → {previous_prediction:.2f}cm")
-                
+                if "water_level" in X_current.columns:
+                    old_value = X_current["water_level"].values[0]
+                    X_current["water_level"] = previous_prediction
+                    print(
+                        f"      • water_level: {old_value:.2f} → {previous_prediction:.2f}cm"
+                    )
+
                 # Shift lag features (simplified approach - in production you'd need proper time-series lag handling)
                 # water_level_lag_1h should become the previous water_level
-                if 'water_level_lag_1h' in X_current.columns:
-                    X_current['water_level_lag_1h'] = previous_prediction
-                    print(f"      • water_level_lag_1h updated to {previous_prediction:.2f}cm")
-            
+                if "water_level_lag_1h" in X_current.columns:
+                    X_current["water_level_lag_1h"] = previous_prediction
+                    print(
+                        f"      • water_level_lag_1h updated to {previous_prediction:.2f}cm"
+                    )
+
             # Use unified models (trained on all stations with station_id as feature)
             # Try ridge first, then linear
             model_name = None
             for model_type in ["ridge", "linear"]:
                 candidate_name = f"swfm-{model_type}-unified-{horizon}min"
                 try:
-                    versions = client.search_registered_models(f"name='{candidate_name}'")
+                    versions = client.search_registered_models(
+                        f"name='{candidate_name}'"
+                    )
                     if versions:
                         model_name = candidate_name
                         break
                 except:
                     continue
-            
+
             if not model_name:
                 print(f"   ⚠️  No unified model found for {horizon}-min horizon")
                 print(f"   💡 Please train models first at /models page")
                 continue
-            
+
             # Load the model and scaler
             try:
                 model_versions = client.search_model_versions(f"name='{model_name}'")
                 if not model_versions:
                     print(f"   ⚠️  Model {model_name} has no versions, skipping...")
                     continue
-                
+
                 # Get latest version
                 latest_version = max(model_versions, key=lambda x: int(x.version))
                 model_uri = f"models:/{model_name}/{latest_version.version}"
                 model = mlflow.sklearn.load_model(model_uri)
-                
+
                 print(f"   ✓ Loaded model: {model_name} v{latest_version.version}")
-                
+
                 # Load scaler from run artifacts
                 run_id = latest_version.run_id
                 scaler = None
@@ -201,55 +229,72 @@ async def generate_forecasts_endpoint(request: GenerateForecastRequest):
                     import joblib
                     import tempfile
                     import os
-                    scaler_path = client.download_artifacts(run_id, "preprocessing/scaler.pkl")
+
+                    scaler_path = client.download_artifacts(
+                        run_id, "preprocessing/scaler.pkl"
+                    )
                     scaler = joblib.load(scaler_path)
                     print(f"   ✓ Loaded scaler from run {run_id[:8]}")
                 except Exception as e:
                     print(f"   ⚠️  No scaler found for this model (older model?): {e}")
-                
+
                 # Match features to what the model expects
-                if hasattr(model, 'feature_names_in_'):
+                if hasattr(model, "feature_names_in_"):
                     expected_features = list(model.feature_names_in_)
                     # Filter X_current to only include features the model was trained with
-                    missing_features = [f for f in expected_features if f not in X_current.columns]
-                    extra_features = [f for f in X_current.columns if f not in expected_features]
-                    
+                    missing_features = [
+                        f for f in expected_features if f not in X_current.columns
+                    ]
+                    extra_features = [
+                        f for f in X_current.columns if f not in expected_features
+                    ]
+
                     if missing_features:
-                        print(f"   ⚠️  WARNING: Missing {len(missing_features)} features: {missing_features[:5]}")
-                        print(f"   🔧 Adding missing features with mean value from scaler")
+                        print(
+                            f"   ⚠️  WARNING: Missing {len(missing_features)} features: {missing_features[:5]}"
+                        )
+                        print(
+                            f"   🔧 Adding missing features with mean value from scaler"
+                        )
                         # Add missing features with scaler's mean (not 0!)
                         # This is critical: filling with 0 before scaling causes extreme values
                         for i, feat in enumerate(missing_features):
-                            if scaler is not None and hasattr(scaler, 'mean_'):
+                            if scaler is not None and hasattr(scaler, "mean_"):
                                 # Find the index of this feature in the scaler
                                 if feat in feature_names:
                                     feat_idx = feature_names.index(feat)
                                     if feat_idx < len(scaler.mean_):
                                         # Use the training mean for this feature
                                         X_current[feat] = scaler.mean_[feat_idx]
-                                        print(f"      • {feat}: using training mean={scaler.mean_[feat_idx]:.2f}")
+                                        print(
+                                            f"      • {feat}: using training mean={scaler.mean_[feat_idx]:.2f}"
+                                        )
                                     else:
                                         X_current[feat] = 0
                                 else:
                                     X_current[feat] = 0
                             else:
                                 X_current[feat] = 0
-                    
+
                     if extra_features:
-                        print(f"   ℹ️  Removing {len(extra_features)} extra features: {extra_features[:5]}")
-                    
+                        print(
+                            f"   ℹ️  Removing {len(extra_features)} extra features: {extra_features[:5]}"
+                        )
+
                     # Reorder columns to match model's expected feature order
                     X_current = X_current[expected_features]
-                
+
                 # Apply scaler to features (CRITICAL: model was trained on scaled features)
                 if scaler is not None:
                     # Store original values for debugging
                     X_original = X_current.copy()
-                    
+
                     X_scaled = scaler.transform(X_current)
-                    X_scaled_df = pd.DataFrame(X_scaled, columns=X_current.columns, index=X_current.index)
+                    X_scaled_df = pd.DataFrame(
+                        X_scaled, columns=X_current.columns, index=X_current.index
+                    )
                     print(f"   ✓ Applied StandardScaler to features")
-                    
+
                     # Check for extreme scaled values (which indicate data issues)
                     extreme_threshold = 10  # More than 10 std deviations is suspicious
                     extreme_features = []
@@ -258,95 +303,109 @@ async def generate_forecasts_endpoint(request: GenerateForecastRequest):
                         if abs(val) > extreme_threshold:
                             orig_val = X_original[col].values[0]
                             extreme_features.append((col, orig_val, val))
-                    
+
                     if extreme_features:
-                        print(f"   ⚠️  WARNING: Found {len(extreme_features)} features with extreme scaled values:")
+                        print(
+                            f"   ⚠️  WARNING: Found {len(extreme_features)} features with extreme scaled values:"
+                        )
                         for col, orig, scaled in extreme_features[:5]:
-                            print(f"      • {col}: original={orig:.2f}, scaled={scaled:.2f} ({scaled:.1f} std)")
-                        print(f"   💡 This may indicate missing/incorrect data that was filled with defaults")
+                            print(
+                                f"      • {col}: original={orig:.2f}, scaled={scaled:.2f} ({scaled:.1f} std)"
+                            )
+                        print(
+                            f"   💡 This may indicate missing/incorrect data that was filled with defaults"
+                        )
                 else:
-                    print(f"   ⚠️  WARNING: No scaler available, using unscaled features (may cause poor predictions)")
+                    print(
+                        f"   ⚠️  WARNING: No scaler available, using unscaled features (may cause poor predictions)"
+                    )
                     X_scaled_df = X_current
-                
+
                 # Calculate target datetime
                 target_date = forecast_date + timedelta(minutes=horizon)
-                
+
                 # Make predictions (unified model predicts for all rows in X_scaled_df)
                 predictions = model.predict(X_scaled_df)
-                
+
                 # Single station forecast (unified model with station_id as feature)
                 predicted_value = float(np.mean(predictions))
-                
+
                 # Store this prediction for the next iteration (RECURSIVE KEY STEP)
                 previous_prediction = predicted_value
-                
+
                 forecast_record = {
                     "station_id": request.station_id,
                     "forecast_date": forecast_date.isoformat(),
                     "target_date": target_date.isoformat(),
                     "water_level": round(predicted_value, 3),
-                    "model_id": None
                 }
                 all_forecasts.append(forecast_record)
-                
-                print(f"   ✓ Forecast generated: {predicted_value:.2f}cm ({predicted_value/100:.2f}m) at {target_date.strftime('%Y-%m-%d %H:%M')}")
+
+                print(
+                    f"   ✓ Forecast generated: {predicted_value:.2f}cm ({predicted_value / 100:.2f}m) at {target_date.strftime('%Y-%m-%d %H:%M')}"
+                )
                 if horizon_idx < len(request.horizons_minutes) - 1:
-                    print(f"   📊 This prediction will be used as input for the next {request.horizons_minutes[horizon_idx + 1]}-min forecast")
-                
+                    print(
+                        f"   📊 This prediction will be used as input for the next {request.horizons_minutes[horizon_idx + 1]}-min forecast"
+                    )
+
             except Exception as e:
                 print(f"   ⚠️  Error loading/using model: {str(e)}")
                 continue
-        
+
         # Check if any forecasts were generated
         if len(all_forecasts) == 0:
             raise HTTPException(
-                status_code=400, 
-                detail="No forecasts generated. Please train unified models first at /models page."
+                status_code=400,
+                detail="No forecasts generated. Please train unified models first at /models page.",
             )
-        
+
         # Save to database
         if request.save_to_db and len(all_forecasts) > 0:
             print(f"\n💾 Saving {len(all_forecasts)} forecasts to database...")
             try:
                 # Delete old forecasts for this station (keep last 7 days)
                 cutoff_date = (datetime.utcnow() - timedelta(days=7)).isoformat()
-                
+
                 # Clear old forecasts for this specific station
-                supabase.table('forecasts').delete()\
-                    .eq('station_id', request.station_id)\
-                    .lt('forecast_date', cutoff_date).execute()
-                
+                supabase.table("forecasts").delete().eq(
+                    "station_id", request.station_id
+                ).lt("forecast_date", cutoff_date).execute()
+
                 # Insert new forecasts
-                response = supabase.table('forecasts').insert(all_forecasts).execute()
-                
+                response = supabase.table("forecasts").insert(all_forecasts).execute()
+
                 if response.data:
                     print(f"   ✓ Forecasts saved successfully")
                 else:
                     print(f"   ⚠️  Warning: No data returned from insert")
-                    
+
             except Exception as e:
                 print(f"   ⚠️  Error saving forecasts: {str(e)}")
                 # Don't fail the request if save fails
-        
-        print(f"\n{'='*70}")
+
+        print(f"\n{'=' * 70}")
         print(f"✅ FORECAST GENERATION COMPLETE")
-        print(f"{'='*70}\n")
-        
+        print(f"{'=' * 70}\n")
+
         return GenerateForecastResponse(
             success=True,
             message=f"Generated {len(all_forecasts)} forecasts for {station_name}",
             station_id=request.station_id,
             forecasts_generated=len(all_forecasts),
-            forecasts=all_forecasts
+            forecasts=all_forecasts,
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print(f"\n❌ Forecast Generation Error:\n{error_trace}")
-        raise HTTPException(status_code=500, detail=f"Forecast generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Forecast generation failed: {str(e)}"
+        )
 
 
 @router.post("/{model_name}", response_model=PredictionResponse)
@@ -512,29 +571,33 @@ async def get_model_info(model_name: str):
 async def cleanup_old_forecasts(hours_old: int = 2):
     """
     Clean up old forecasts from the database
-    
+
     Args:
         hours_old: Delete forecasts older than this many hours (default: 2)
-    
+
     Returns:
         Number of forecasts deleted
     """
     try:
         cutoff_date = datetime.utcnow() - timedelta(hours=hours_old)
-        
+
         # Delete old forecasts
-        result = supabase.table('forecasts').delete().lt('forecast_date', cutoff_date.isoformat()).execute()
-        
+        result = (
+            supabase.table("forecasts")
+            .delete()
+            .lt("forecast_date", cutoff_date.isoformat())
+            .execute()
+        )
+
         deleted_count = len(result.data) if result.data else 0
-        
+
         return {
             "success": True,
             "message": f"Deleted {deleted_count} forecasts older than {hours_old} hours",
             "deleted_count": deleted_count,
-            "cutoff_date": cutoff_date.isoformat()
+            "cutoff_date": cutoff_date.isoformat(),
         }
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to cleanup forecasts: {str(e)}"
+            status_code=500, detail=f"Failed to cleanup forecasts: {str(e)}"
         )
