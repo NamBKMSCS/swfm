@@ -37,14 +37,12 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - MLFLOW_DB_USER=${MLFLOW_DB_USER:-mlflow}
-      - MLFLOW_DB_PASSWORD=${MLFLOW_DB_PASSWORD:-mlflow}
-      - MLFLOW_DB_NAME=${MLFLOW_DB_NAME:-mlflow}
+      - BACKEND_STORE_URI=postgresql://${MLFLOW_DB_USER:-mlflow}:${MLFLOW_DB_PASSWORD:-mlflow}@mlflow-postgres:5432/${MLFLOW_DB_NAME:-mlflow}
     volumes:
       - mlflow-artifacts:/app/mlartifacts
     command: >
       mlflow server 
-        --backend-store-uri postgresql://$${MLFLOW_DB_USER}:$${MLFLOW_DB_PASSWORD}@mlflow-postgres:5432/$${MLFLOW_DB_NAME} 
+        --backend-store-uri "$${BACKEND_STORE_URI}"
         --default-artifact-root /app/mlartifacts 
         --host 0.0.0.0 
         --port 5000
