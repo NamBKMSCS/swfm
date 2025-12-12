@@ -8,9 +8,10 @@
     ],
     "scripts": {
         "build": "turbo run build",
-        "dev": "turbo run dev --parallel",
+        "dev": "turbo run dev",
         "lint": "turbo run lint",
-        "format": "prettier --write \"**/*.{ts,tsx,md}\""
+        "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+        "db:gen-types": "pnpx supabase gen types typescript --local > ./apps/web/lib/supabase/schema.ts && pnpx better-supabase-types -i ./apps/web/lib/supabase/schema.ts -o ./apps/web/lib/supabase/schema.ts"
     },
     "devDependencies": {
         "prettier": "latest",

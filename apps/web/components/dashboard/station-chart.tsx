@@ -272,7 +272,7 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
                 />
               }
             />
-            <ChartLegend content={<ChartLegendContent />} />
+            {/* <ChartLegend content={<ChartLegendContent />} /> */}
             <Line
               type="monotone"
               dataKey="actual"

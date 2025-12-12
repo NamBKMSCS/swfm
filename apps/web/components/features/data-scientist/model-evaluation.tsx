@@ -3,19 +3,14 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EvaluationMetrics } from "@/components/features/data-scientist/evaluation-metrics"
-import { AccuracyChart } from "@/components/features/data-scientist/accuracy-chart"
 import { AccuracyTrendChart } from "@/components/features/data-scientist/accuracy-trend-chart"
 import { getEvaluationMetrics } from "@/app/actions/analysis-actions"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RegressionAnalysisPage } from "@/components/features/data-scientist/regression-analysis"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus } from "lucide-react"
 
-interface ModelEvaluationPageProps {
-  role: "expert" | "admin"
-}
 
-export function ModelEvaluationPage({ role }: ModelEvaluationPageProps) {
+export function ModelEvaluationPage() {
   const [metrics, setMetrics] = useState<any[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -204,10 +199,6 @@ export function ModelEvaluationPage({ role }: ModelEvaluationPageProps) {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="regression">
-            <RegressionAnalysisPage role={role} />
           </TabsContent>
         </Tabs>
       </main>

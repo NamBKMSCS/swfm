@@ -210,36 +210,6 @@ function aggregateToDaily(data: { measured_at: string; water_level: number | nul
 }
 
 /**
- * Get forecast comparison data for multiple models
- */
-export async function getForecastComparisonData(stationId: number) {
-  const supabase = await createClient()
-  
-  const futureDate = new Date()
-  futureDate.setDate(futureDate.getDate() + 10)
-  
-  const { data, error } = await supabase
-    .from('forecasts')
-    .select(`
-      target_date,
-      water_level,
-      model_id,
-      model_configs!inner(name, algorithm)
-    `)
-    .eq('station_id', stationId)
-    .gte('target_date', new Date().toISOString())
-    .lte('target_date', futureDate.toISOString())
-    .order('target_date', { ascending: true })
-  
-  if (error) {
-    console.error('Error fetching forecast comparison:', error)
-    return []
-  }
-  
-  return data || []
-}
-
-/**
  * Get accuracy metrics by station
  * Returns R² scores converted to percentage by station
  * Shows all stations, even those without performance data

@@ -34,88 +34,67 @@ export type Database = {
   };
   public: {
     Tables: {
+      active_models: {
+        Row: {
+          activated_at: string | null;
+          activated_by: string | null;
+          horizon_minutes: number;
+          id: string;
+          model_name: string;
+          model_run_id: string;
+          model_version: string;
+          notes: string | null;
+        };
+        Insert: {
+          activated_at?: string | null;
+          activated_by?: string | null;
+          horizon_minutes: number;
+          id?: string;
+          model_name: string;
+          model_run_id: string;
+          model_version: string;
+          notes?: string | null;
+        };
+        Update: {
+          activated_at?: string | null;
+          activated_by?: string | null;
+          horizon_minutes?: number;
+          id?: string;
+          model_name?: string;
+          model_run_id?: string;
+          model_version?: string;
+          notes?: string | null;
+        };
+        Relationships: [];
+      };
       forecasts: {
         Row: {
-          flow_rate: number | null;
           forecast_date: string;
           id: number;
-          model_id: number | null;
-          rainfall: number | null;
           station_id: number;
           target_date: string;
           water_level: number | null;
         };
         Insert: {
-          flow_rate?: number | null;
           forecast_date: string;
           id?: number;
-          model_id?: number | null;
-          rainfall?: number | null;
           station_id: number;
           target_date: string;
           water_level?: number | null;
         };
         Update: {
-          flow_rate?: number | null;
           forecast_date?: string;
           id?: number;
-          model_id?: number | null;
-          rainfall?: number | null;
           station_id?: number;
           target_date?: string;
           water_level?: number | null;
         };
         Relationships: [
           {
-            foreignKeyName: "forecasts_model_id_fkey";
-            columns: ["model_id"];
-            isOneToOne: false;
-            referencedRelation: "model_configs";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "forecasts_station_id_fkey";
             columns: ["station_id"];
             isOneToOne: false;
             referencedRelation: "stations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      model_configs: {
-        Row: {
-          algorithm: string;
-          created_at: string;
-          created_by: string | null;
-          id: number;
-          is_stable: boolean | null;
-          name: string;
-          parameters: Json | null;
-        };
-        Insert: {
-          algorithm: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: number;
-          is_stable?: boolean | null;
-          name: string;
-          parameters?: Json | null;
-        };
-        Update: {
-          algorithm?: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: number;
-          is_stable?: boolean | null;
-          name?: string;
-          parameters?: Json | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "model_configs_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -187,53 +166,6 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [];
-      };
-      regression_analysis: {
-        Row: {
-          actual: number | null;
-          analyzed_at: string | null;
-          coefficients: Json | null;
-          id: string;
-          mae: number | null;
-          predicted: number | null;
-          r2: number | null;
-          residual: number | null;
-          rmse: number | null;
-          station_id: number | null;
-        };
-        Insert: {
-          actual?: number | null;
-          analyzed_at?: string | null;
-          coefficients?: Json | null;
-          id?: string;
-          mae?: number | null;
-          predicted?: number | null;
-          r2?: number | null;
-          residual?: number | null;
-          rmse?: number | null;
-          station_id?: number | null;
-        };
-        Update: {
-          actual?: number | null;
-          analyzed_at?: string | null;
-          coefficients?: Json | null;
-          id?: string;
-          mae?: number | null;
-          predicted?: number | null;
-          r2?: number | null;
-          residual?: number | null;
-          rmse?: number | null;
-          station_id?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "regression_analysis_station_id_fkey";
-            columns: ["station_id"];
-            isOneToOne: false;
-            referencedRelation: "stations";
-            referencedColumns: ["id"];
-          },
-        ];
       };
       role_permissions: {
         Row: {
@@ -731,17 +663,17 @@ export enum UserStatus {
 }
 
 // Tables
+export type ActiveModels = Database["public"]["Tables"]["active_models"]["Row"];
+export type InsertActiveModels =
+  Database["public"]["Tables"]["active_models"]["Insert"];
+export type UpdateActiveModels =
+  Database["public"]["Tables"]["active_models"]["Update"];
+
 export type Forecasts = Database["public"]["Tables"]["forecasts"]["Row"];
 export type InsertForecasts =
   Database["public"]["Tables"]["forecasts"]["Insert"];
 export type UpdateForecasts =
   Database["public"]["Tables"]["forecasts"]["Update"];
-
-export type ModelConfigs = Database["public"]["Tables"]["model_configs"]["Row"];
-export type InsertModelConfigs =
-  Database["public"]["Tables"]["model_configs"]["Insert"];
-export type UpdateModelConfigs =
-  Database["public"]["Tables"]["model_configs"]["Update"];
 
 export type ModelPerformance =
   Database["public"]["Tables"]["model_performance"]["Row"];
@@ -756,13 +688,6 @@ export type InsertPreprocessingConfigs =
   Database["public"]["Tables"]["preprocessing_configs"]["Insert"];
 export type UpdatePreprocessingConfigs =
   Database["public"]["Tables"]["preprocessing_configs"]["Update"];
-
-export type RegressionAnalysis =
-  Database["public"]["Tables"]["regression_analysis"]["Row"];
-export type InsertRegressionAnalysis =
-  Database["public"]["Tables"]["regression_analysis"]["Insert"];
-export type UpdateRegressionAnalysis =
-  Database["public"]["Tables"]["regression_analysis"]["Update"];
 
 export type RolePermissions =
   Database["public"]["Tables"]["role_permissions"]["Row"];

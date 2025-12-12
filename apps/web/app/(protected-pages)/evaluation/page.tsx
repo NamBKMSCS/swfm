@@ -20,5 +20,5 @@ export default function EvaluationPage() {
     redirect("/dashboard")
   }
 
-  return <ModelEvaluationPage role={role as "expert" | "admin"} />
+  return <ModelEvaluationPage />
 }

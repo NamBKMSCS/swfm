@@ -7,8 +7,7 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "type-check": "tsc --noEmit",
-    "db:gen-types": "pnpx supabase gen types typescript --local > ./lib/supabase/schema.ts && pnpx better-supabase-types -i ./lib/supabase/schema.ts -o ./lib/supabase/schema.ts"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -61,7 +60,7 @@
     "react-is": "^19.2.1",
     "react-leaflet": "^5.0.0",
     "react-resizable-panels": "^2.1.7",
-    "recharts": "3.5.1",
+    "recharts": "2.15.4",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",

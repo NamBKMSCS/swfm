@@ -228,7 +228,7 @@ export function ForecastChart({ station, stationId, showMultiple = false }: Fore
               />
             }
           />
-          <ChartLegend content={<ChartLegendContent />} />
+          {/* <ChartLegend content={<ChartLegendContent payload={undefined} />} /> */}
           <Line
             type="monotone"
             dataKey="actual"

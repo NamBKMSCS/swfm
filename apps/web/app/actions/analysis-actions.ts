@@ -17,27 +17,3 @@ export async function getEvaluationMetrics() {
 
   return data
 }
-
-export async function getRegressionAnalysis() {
-  const supabase = await createClient()
-  
-  const { data, error } = await supabase
-    .from('regression_analysis')
-    .select(`
-      *,
-      stations (
-        name,
-        country,
-        latitude,
-        longitude
-      )
-    `)
-    .order('analyzed_at', { ascending: false })
-
-  if (error) {
-    console.error("Error fetching regression analysis:", error)
-    return []
-  }
-
-  return data
-}

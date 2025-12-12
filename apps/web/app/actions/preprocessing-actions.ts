@@ -1,5 +1,6 @@
 "use server"
 
+import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000"
@@ -187,3 +188,22 @@ export async function getPreprocessingPipelineSummary() {
     throw error
   }
 }
+
+
+export async function savePreprocessingConfig(methodId: string, enabled: boolean, config: any) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('preprocessing_configs')
+    .upsert({
+      method_id: methodId,
+      enabled,
+      config,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'method_id' })
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/preprocessing')
+}
+
+

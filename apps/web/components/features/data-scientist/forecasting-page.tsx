@@ -375,7 +375,7 @@ export function ForecastingPage() {
                       />
                     }
                   />
-                  <ChartLegend content={<ChartLegendContent />} />
+                  {/* <ChartLegend content={<ChartLegendContent />} /> */}
                   {/* Confidence band */}
                   <Area
                     type="monotone"

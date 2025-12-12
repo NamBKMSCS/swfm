@@ -1,7 +1,126 @@
 # SWFM Docker Compose Configuration
-# Runs Next.js app, ML service, and MLflow
+# Runs Next.js app, ML service, MLflow with PostgreSQL backend, and auto-trainer
 
 services:
+  # PostgreSQL for MLflow Backend
+  mlflow-postgres:
+    image: postgres:14
+    container_name: swfm-mlflow-postgres
+    environment:
+      - POSTGRES_DB=${MLFLOW_DB_NAME:-mlflow}
+      - POSTGRES_USER=${MLFLOW_DB_USER:-mlflow}
+      - POSTGRES_PASSWORD=${MLFLOW_DB_PASSWORD:-mlflow}
+    ports:
+      - "${MLFLOW_DB_PORT:-5432}:5432"
+    volumes:
+      - mlflow-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${MLFLOW_DB_USER:-mlflow} -d ${MLFLOW_DB_NAME:-mlflow}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - swfm-network
+    restart: unless-stopped
+
+  # MLflow Tracking Server with PostgreSQL Backend
+  mlflow:
+    image: python:3.10-slim
+    container_name: swfm-mlflow
+    working_dir: /app
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-artifacts:/app/mlartifacts
+    command: >
+      sh -c "
+        apt-get update && apt-get install -y curl &&
+        pip install mlflow==2.9.0 psycopg2-binary &&
+        mlflow server 
+          --backend-store-uri postgresql://$${MLFLOW_DB_USER:-mlflow}:$${MLFLOW_DB_PASSWORD:-mlflow}@mlflow-postgres:5432/$${MLFLOW_DB_NAME:-mlflow} 
+          --default-artifact-root /app/mlartifacts 
+          --host 0.0.0.0 
+          --port 5000
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mlflow-postgres:
+        condition: service_healthy
+    networks:
+      - swfm-network
+    restart: unless-stopped
+
+  # FastAPI ML API Service
+  ml-api:
+    build:
+      context: ./apps/ml-service
+      dockerfile: Dockerfile
+    container_name: swfm-ml-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=false
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - CORS_ORIGINS=["http://localhost:3000","http://nextjs:3000"]
+    volumes:
+      - ml-models:/app/models
+      - mlflow-artifacts:/app/mlartifacts
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - swfm-network
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  # ML Auto-Trainer Service
+  ml-trainer:
+    build:
+      context: ./apps/ml-service
+      dockerfile: Dockerfile
+    container_name: swfm-ml-trainer
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - TRAIN_INTERVAL=${TRAIN_INTERVAL:-3600}
+    volumes:
+      - ./apps/ml-service/pretrain_and_predict.py:/app/pretrain_and_predict.py
+      - ./apps/ml-service/auto_train_predict.py:/app/auto_train_predict.py
+      - ml-models:/app/models
+      - ml-logs:/app/logs
+      - mlflow-artifacts:/app/mlartifacts
+    depends_on:
+      ml-api:
+        condition: service_healthy
+    networks:
+      - swfm-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        echo 'Waiting for ML API to be ready...' &&
+        sleep 10 &&
+        echo 'Running initial training...' &&
+        python pretrain_and_predict.py &&
+        echo 'Starting auto-training service...' &&
+        python auto_train_predict.py --interval $${TRAIN_INTERVAL:-3600}
+      "
+
   # Next.js Frontend Application
   nextjs:
     build:
@@ -15,55 +134,13 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - ML_SERVICE_URL=http://ml-service:8000
+      - ML_SERVICE_URL=http://ml-api:8000
+      - MLFLOW_URL=http://mlflow:5000
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY}
     depends_on:
-      - ml-service
-    networks:
-      - swfm-network
-    restart: unless-stopped
-
-  # FastAPI ML Service with MLflow
-  ml-service:
-    build:
-      context: ./apps/ml-service
-      dockerfile: Dockerfile
-    container_name: swfm-ml-service
-    ports:
-      - "8000:8000"
-    environment:
-      - DEBUG=false
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - MLFLOW_ARTIFACT_ROOT=/app/mlartifacts
-      - CORS_ORIGINS=["http://localhost:3000","http://nextjs:3000"]
-    volumes:
-      - ml-models:/app/models
-      - mlflow-artifacts:/app/mlartifacts
-    depends_on:
-      - mlflow
-    networks:
-      - swfm-network
-    restart: unless-stopped
-
-  # MLflow Tracking Server
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.9.0
-    container_name: swfm-mlflow
-    ports:
-      - "5000:5000"
-    environment:
-      - MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow.db
-      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
-    volumes:
-      - mlflow-data:/mlflow
-      - mlflow-artifacts:/mlflow/artifacts
-    command: >
-      mlflow server
-      --backend-store-uri sqlite:///mlflow/mlflow.db
-      --default-artifact-root /mlflow/artifacts
-      --host 0.0.0.0
-      --port 5000
+      ml-api:
+        condition: service_healthy
     networks:
       - swfm-network
     restart: unless-stopped
@@ -73,9 +150,11 @@ networks:
     driver: bridge
 
 volumes:
-  ml-models:
-    name: swfm-ml-models
-  mlflow-data:
-    name: swfm-mlflow-data
+  mlflow-pgdata:
+    name: swfm-mlflow-pgdata
   mlflow-artifacts:
     name: swfm-mlflow-artifacts
+  ml-models:
+    name: swfm-ml-models
+  ml-logs:
+    name: swfm-ml-logs
